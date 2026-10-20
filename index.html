@@ -72,6 +72,11 @@
   .run li.win::before { background: var(--red); }
   .run .stage { font-size: 0.8rem; color: var(--muted); }
   .run .score { font-weight: 600; white-space: nowrap; color: #fff; }
+  .match-btn {   /* makes the whole row tappable while looking like plain text */
+    all: unset; box-sizing: border-box; width: 100%; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  }
+  .match-btn:focus-visible { outline: 2px solid var(--red); outline-offset: 4px; border-radius: 6px; }
   .run .note { display: block; font-size: 0.8rem; color: var(--muted); font-weight: 400; text-align: right; }
 
   /* ===== Charts ===== */
@@ -131,6 +136,7 @@
   <section>
     <div class="label">The run</div>
     <h2>Seven matches, one semi-final</h2>
+    <p class="label" style="margin:0 0 4px">Tap a match to see its shots</p>
     <ul class="run" id="run"></ul>
   </section>
 
@@ -147,7 +153,7 @@
   </section>
 
   <!-- 4. FINDING 2 -->
-  <section>
+  <section id="shotmap-section" style="scroll-margin-top:16px">
     <div class="label">Finding 2</div>
     <h2>Defending the box</h2>
     <p>Every shot Morocco's opponents took. In the knockouts they often reached the box, but mostly for low-quality chances. Spain and Portugal took 24 shots combined and scored none.</p>
@@ -373,11 +379,25 @@ function buildRun(matches) {
       : "";
     const li = document.createElement("li");
     if (won) li.className = "win";
+    // Each row is a button: tapping it shows that match on the shot map
     li.innerHTML =
-      `<span>${m.opponent}<br><span class="stage">${m.stage}</span></span>` +
-      `<span class="score">${m.morocco_goals}–${m.opponent_goals}${note}</span>`;
+      `<button type="button" class="match-btn" aria-label="Show ${m.opponent} (${m.stage}) on the shot map">` +
+      `<span>${m.opponent}<br><span class="stage">${m.stage} · see shots ›</span></span>` +
+      `<span class="score">${m.morocco_goals}–${m.opponent_goals}${note}</span></button>`;
+    li.querySelector("button").addEventListener("click", () => showMatchOnMap(m));
     list.appendChild(li);
   });
+}
+
+// Jump from the timeline to the shot map, filtered to one match
+function showMatchOnMap(m) {
+  const filter = document.getElementById("shot-filter");
+  const value = m.stage + "|" + m.opponent;
+  if ([...filter.options].some(o => o.value === value)) {
+    filter.value = value;
+    filter.dispatchEvent(new Event("change"));   // redraws the map, same as picking it yourself
+  }
+  document.getElementById("shotmap-section").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 // 3. Shots / xG chart with a toggle
