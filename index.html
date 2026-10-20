@@ -85,6 +85,12 @@
   .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; color: var(--muted); margin-top: 12px; }
   .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
 
+  /* ===== Finding 4: two big numbers side by side ===== */
+  .stats { display: flex; gap: 24px; margin-top: 8px; }
+  .stat { font-family: var(--display); font-size: 2.6rem; line-height: 1; color: var(--red); }
+  .stat.gray { color: var(--gray); }
+  .stat-label { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+
   /* ===== 4. Shot map ===== */
   .shotmap { width: 100%; height: auto; border-radius: 10px; margin-top: 12px; display: block; }
 
@@ -146,6 +152,20 @@
     <div class="chart-box" style="height:360px"><canvas id="player-chart" aria-label="Expected goals and actual goals per Moroccan player"></canvas></div>
   </section>
 
+  <!-- 5b. FINDING 4 -->
+  <section>
+    <div class="label">Finding 4</div>
+    <h2>Stronger when it got harder</h2>
+    <p>xG per shot conceded measures how dangerous the average shot against Morocco was. In the group stage, Morocco ranked only 28th of 32 teams. Against Spain, Portugal, France and Croatia in the knockouts, it dropped sharply.</p>
+    <div class="stats">
+      <div><div class="stat gray" id="group-xgps">–</div><div class="stat-label">per shot, group stage</div></div>
+      <div><div class="stat" id="ko-xgps">–</div><div class="stat-label">per shot, knockouts</div></div>
+    </div>
+    <div class="chart-box"><canvas id="defense-chart" aria-label="xG per shot conceded by Morocco in each match"></canvas></div>
+    <p style="margin-top:16px">Over all 7 matches (0.095), Morocco ranked 5th of the 8 teams that played 5 or more matches, almost level with Argentina (0.094) and England (0.093).</p>
+    <p class="label" style="margin:0">Group-stage figures rest on just 20 shots, so treat single matches with care.</p>
+  </section>
+
   <!-- 6. HOW I BUILT IT -->
   <section>
     <div class="label">Method</div>
@@ -191,7 +211,40 @@ fetch("data.json")
     buildRun(data.matches);
     buildMatchChart(data.matches);
     buildPlayerChart(data);
+    buildDefenseChart(data.matches);
   });
+
+// Finding 4: how dangerous opponents' shots were, match by match
+function buildDefenseChart(matches) {
+  // Pooled average: total xG divided by total shots (fairer than averaging match averages)
+  const perShot = list =>
+    list.reduce((s, m) => s + m.opponent_xg, 0) / list.reduce((s, m) => s + m.opponent_shots, 0);
+  const group = matches.filter(m => m.stage === "Group");
+  const knockout = matches.filter(m => m.stage !== "Group");
+  document.getElementById("group-xgps").textContent = perShot(group).toFixed(2);
+  document.getElementById("ko-xgps").textContent = perShot(knockout).toFixed(2);
+
+  new Chart(document.getElementById("defense-chart"), {
+    type: "bar",
+    data: {
+      labels: matches.map(m => [m.opponent, m.stage]),
+      datasets: [{
+        label: "Opponent xG per shot",
+        data: matches.map(m => +(m.opponent_xg / m.opponent_shots).toFixed(3)),
+        backgroundColor: matches.map(m => (m.stage === "Group" ? GRAY : RED)),
+        borderRadius: 4,
+      }],
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { beginAtZero: true, title: { display: true, text: "xG per shot conceded" } },
+      },
+    },
+  });
+}
 
 // 1. Headline: xG per shot, Morocco vs Spain
 function buildHeadline(matches) {
