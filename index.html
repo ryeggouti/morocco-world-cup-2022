@@ -140,12 +140,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
   padding: 1.5rem var(--gutter);
 }
 .logo { display: flex; align-items: center; gap: 0.75rem; }
-.monogram {
-  display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 50%;
-  border: 1px solid var(--line-strong); font-weight: 600; font-size: 0.875rem; background: var(--background);
-}
-.logo-name { display: none; font-size: var(--t-eyebrow); font-weight: 500; text-transform: uppercase; letter-spacing: 0.22em; color: var(--muted); }
-@media (min-width: 640px) { .logo-name { display: inline; } }
+.logo-name { font-size: var(--t-eyebrow); font-weight: 500; text-transform: uppercase; letter-spacing: 0.22em; color: var(--muted); }
 
 .nav-links { display: none; gap: 2.5rem; }
 .nav-links a {
@@ -378,7 +373,7 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
 <!-- NAVIGATION -->
 <header class="site-header">
   <nav class="site-nav" aria-label="Main">
-    <a class="logo" href="#top"><span class="monogram">LD</span><span class="logo-name">Lions in the Data</span></a>
+    <a class="logo" href="#top"><span class="logo-name">Lions in the Data</span></a>
     <ul class="nav-links">
       <li><a href="#run">The run</a></li>
       <li><a href="#findings">Findings</a></li>
