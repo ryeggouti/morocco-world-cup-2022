@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lions in the Data</title>
+<meta name="description" content="How Morocco reached the 2022 World Cup semi-final, told through numbers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  /* ===== Design tokens (colors and fonts used everywhere) ===== */
+  :root {
+    --bg: #0E1512;        /* page background: near-black green */
+    --card: #17211C;      /* section panels */
+    --line: #26332C;      /* borders and chart grid */
+    --text: #D9DED9;      /* body text: light gray, easier to read than pure white */
+    --muted: #9AA39D;     /* small labels */
+    --red: #C1272D;       /* Morocco */
+    --gray: #8A8F8C;      /* opponents */
+    --green: #006233;     /* accents */
+    --display: "Bricolage Grotesque", system-ui, sans-serif;
+    --body: "Inter", system-ui, sans-serif;
+  }
+
+  /* ===== Page layout: one column, phone first ===== */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.6 var(--body);
+  }
+  main { max-width: 680px; margin: 0 auto; padding: 0 16px 48px; }
+  h1, h2 { font-family: var(--display); color: #fff; line-height: 1.1; margin: 0; }
+  h2 { font-size: 1.6rem; margin-bottom: 12px; }
+  p { margin: 0 0 12px; }
+  a { color: #fff; }
+  section {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 24px 20px;
+    margin-top: 20px;
+  }
+  .label {
+    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+  }
+
+  /* ===== 1. Hero ===== */
+  .hero { padding: 56px 4px 24px; }
+  .hero h1 { font-size: clamp(2.4rem, 11vw, 3.6rem); }
+  .hero .sub { color: var(--muted); font-size: 1.05rem; margin-top: 12px; }
+  .big-number {
+    font-family: var(--display); color: var(--red);
+    font-size: clamp(4rem, 22vw, 6.5rem); line-height: 1; margin-top: 36px;
+  }
+  .stripe { height: 4px; width: 72px; background: var(--green); margin-top: 28px; border-radius: 2px; }
+
+  /* ===== 2. Timeline of the run ===== */
+  .run { list-style: none; margin: 0; padding: 0; }
+  .run li {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    padding: 12px 0 12px 16px; border-left: 3px solid var(--line); position: relative;
+  }
+  .run li::before {   /* the dot on the timeline */
+    content: ""; position: absolute; left: -7px; top: 19px;
+    width: 11px; height: 11px; border-radius: 50%; background: var(--gray);
+  }
+  .run li.win::before { background: var(--red); }
+  .run .stage { font-size: 0.8rem; color: var(--muted); }
+  .run .score { font-weight: 600; white-space: nowrap; color: #fff; }
+  .run .note { display: block; font-size: 0.8rem; color: var(--muted); font-weight: 400; text-align: right; }
+
+  /* ===== Charts ===== */
+  .chart-box { position: relative; height: 320px; margin-top: 16px; }
+  .toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; margin-top: 4px; }
+  .toggle button {
+    font: 600 0.9rem var(--body); color: var(--muted); background: none;
+    border: 0; border-radius: 999px; padding: 6px 16px; cursor: pointer;
+  }
+  .toggle button[aria-pressed="true"] { background: var(--red); color: #fff; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; color: var(--muted); margin-top: 12px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+
+  /* ===== 4. Shot map ===== */
+  .shotmap { width: 100%; height: auto; border-radius: 10px; margin-top: 12px; display: block; }
+
+  /* ===== 6 and 7. How I built it, footer ===== */
+  ul { padding-left: 20px; margin: 0 0 12px; }
+  footer { text-align: center; color: var(--muted); font-size: 0.9rem; padding: 32px 16px 0; }
+</style>
+</head>
+<body>
+<main>
+
+  <!-- 1. HERO -->
+  <header class="hero">
+    <div class="label">World Cup 2022 · Data story</div>
+    <h1>Lions in the Data</h1>
+    <p class="sub">How Morocco reached the 2022 World Cup semi-final, told through numbers.</p>
+    <div class="big-number" id="headline-number">–</div>
+    <p>Morocco's shots against Spain were worth <strong id="headline-times">–</strong> as much each as Spain's, measured in expected goals (xG).</p>
+    <div class="stripe"></div>
+  </header>
+
+  <!-- 2. THE RUN -->
+  <section>
+    <div class="label">The run</div>
+    <h2>Seven matches, one semi-final</h2>
+    <ul class="run" id="run"></ul>
+  </section>
+
+  <!-- 3. FINDING 1 -->
+  <section>
+    <div class="label">Finding 1</div>
+    <h2>Fewer shots, better chances</h2>
+    <p>Spain and Portugal out-shot Morocco. Switch to xG, which measures how likely each shot was to score, and the picture flips.</p>
+    <div class="toggle" role="group" aria-label="Measure">
+      <button type="button" data-measure="shots" aria-pressed="true">Shots</button>
+      <button type="button" data-measure="xg" aria-pressed="false">xG</button>
+    </div>
+    <div class="chart-box"><canvas id="match-chart" aria-label="Morocco and opponents, shots or xG per match"></canvas></div>
+  </section>
+
+  <!-- 4. FINDING 2 -->
+  <section>
+    <div class="label">Finding 2</div>
+    <h2>Defending the box</h2>
+    <p>Every shot Morocco's four knockout opponents took. They often reached the box, but mostly for low-quality chances. Spain and Portugal took 24 shots combined and scored none.</p>
+    <img class="shotmap" src="shotmap.png" alt="Shot map of knockout opponents' shots against Morocco. Most are small, low-xG dots inside the box; the four goals came against France and Croatia.">
+    <div class="legend">
+      <span><span class="dot" style="background:var(--gray)"></span>No goal</span>
+      <span><span class="dot" style="background:var(--red)"></span>Goal</span>
+      <span>Bigger dot = higher xG</span>
+    </div>
+  </section>
+
+  <!-- 5. FINDING 3 -->
+  <section>
+    <div class="label">Finding 3</div>
+    <h2>Beating the odds</h2>
+    <p>En-Nesyri scored 2 goals from 1.05 xG. Ziyech scored from 10 shots worth only 0.31 xG. As a team, Morocco scored <span id="team-goals">–</span> goals from <span id="team-xg">–</span> xG.</p>
+    <div class="chart-box" style="height:360px"><canvas id="player-chart" aria-label="Expected goals and actual goals per Moroccan player"></canvas></div>
+  </section>
+
+  <!-- 6. HOW I BUILT IT -->
+  <section>
+    <div class="label">Method</div>
+    <h2>How I built it</h2>
+    <ul>
+      <li><strong>Data:</strong> StatsBomb Open Data, free event data for every 2022 World Cup match.</li>
+      <li><strong>Analysis:</strong> Python (pandas, matplotlib, mplsoccer) in Google Colab.</li>
+      <li><strong>Website:</strong> HTML, CSS and Chart.js, hosted on GitHub Pages.</li>
+      <li>I used AI tools to help write some of the code. I chose the questions, checked the results and wrote the findings.</li>
+    </ul>
+    <p class="label" style="margin-top:20px">Data notes</p>
+    <ul>
+      <li>Penalty shootout kicks are left out of shot and xG totals.</li>
+      <li>StatsBomb credits the 72' goal against Belgium to Romain Saïss; official records credit Abdelhamid Sabiri. The team total of 6 goals matches official results.</li>
+    </ul>
+  </section>
+
+  <!-- 7. FOOTER -->
+  <footer>
+    <p>Code and analysis on <a href="https://github.com/ryeggouti/morocco-world-cup-2022">GitHub</a></p>
+  </footer>
+
+</main>
+
+<script>
+// Colors from the design tokens above, so charts match the page
+const css = getComputedStyle(document.documentElement);
+const RED = css.getPropertyValue("--red").trim();
+const GRAY = css.getPropertyValue("--gray").trim();
+const LINE = css.getPropertyValue("--line").trim();
+const MUTED = css.getPropertyValue("--muted").trim();
+
+// Shared chart styling
+Chart.defaults.color = MUTED;
+Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+Chart.defaults.borderColor = LINE;
+
+// Load the data exported from Colab, then build every part of the page
+fetch("data.json")
+  .then(response => response.json())
+  .then(data => {
+    buildHeadline(data.matches);
+    buildRun(data.matches);
+    buildMatchChart(data.matches);
+    buildPlayerChart(data);
+  });
+
+// 1. Headline: xG per shot, Morocco vs Spain
+function buildHeadline(matches) {
+  const spain = matches.find(m => m.opponent === "Spain");
+  const moroccoPerShot = spain.morocco_xg / spain.morocco_shots;
+  const spainPerShot = spain.opponent_xg / spain.opponent_shots;
+  const times = (moroccoPerShot / spainPerShot).toFixed(1) + "×";
+  document.getElementById("headline-number").textContent = times;
+  document.getElementById("headline-times").textContent = times;
+}
+
+// 2. Timeline: one row per match
+function buildRun(matches) {
+  const list = document.getElementById("run");
+  matches.forEach(m => {
+    const won = m.morocco_goals > m.opponent_goals || m.opponent === "Spain";
+    const note = m.opponent === "Spain" ? '<span class="note">Won 3–0 on penalties</span>' : "";
+    const li = document.createElement("li");
+    if (won) li.className = "win";
+    li.innerHTML =
+      `<span>${m.opponent}<br><span class="stage">${m.stage}</span></span>` +
+      `<span class="score">${m.morocco_goals}–${m.opponent_goals}${note}</span>`;
+    list.appendChild(li);
+  });
+}
+
+// 3. Shots / xG chart with a toggle
+function buildMatchChart(matches) {
+  const labels = matches.map(m => [m.opponent, m.stage]);
+  const series = {
+    shots: [matches.map(m => m.morocco_shots), matches.map(m => m.opponent_shots)],
+    xg: [matches.map(m => m.morocco_xg), matches.map(m => m.opponent_xg)],
+  };
+  const chart = new Chart(document.getElementById("match-chart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "Morocco", data: series.shots[0], backgroundColor: RED, borderRadius: 4 },
+        { label: "Opponent", data: series.shots[1], backgroundColor: GRAY, borderRadius: 4 },
+      ],
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom" } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { beginAtZero: true, title: { display: true, text: "Shots" } },
+      },
+    },
+  });
+
+  document.querySelectorAll(".toggle button").forEach(button => {
+    button.addEventListener("click", () => {
+      const measure = button.dataset.measure;
+      chart.data.datasets[0].data = series[measure][0];
+      chart.data.datasets[1].data = series[measure][1];
+      chart.options.scales.y.title.text = measure === "xg" ? "Expected goals (xG)" : "Shots";
+      chart.update();
+      document.querySelectorAll(".toggle button").forEach(b =>
+        b.setAttribute("aria-pressed", b === button ? "true" : "false"));
+    });
+  });
+}
+
+// 5. Players: xG vs actual goals
+function buildPlayerChart(data) {
+  const teamGoals = data.matches.reduce((sum, m) => sum + m.morocco_goals, 0);
+  const teamXg = data.matches.reduce((sum, m) => sum + m.morocco_xg, 0);
+  document.getElementById("team-goals").textContent = teamGoals;
+  document.getElementById("team-xg").textContent = teamXg.toFixed(2);
+
+  new Chart(document.getElementById("player-chart"), {
+    type: "bar",
+    data: {
+      labels: data.players.map(p => p.player),
+      datasets: [
+        { label: "Expected goals (xG)", data: data.players.map(p => p.xg), backgroundColor: GRAY, borderRadius: 4 },
+        { label: "Actual goals", data: data.players.map(p => p.goals), backgroundColor: RED, borderRadius: 4 },
+      ],
+    },
+    options: {
+      indexAxis: "y",
+      maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom" } },
+      scales: {
+        x: { beginAtZero: true },
+        y: { grid: { display: false }, ticks: { font: { size: 11 } } },
+      },
+    },
+  });
+}
+</script>
+</body>
+</html>
