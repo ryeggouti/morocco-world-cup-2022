@@ -1,4 +1,4 @@
-# Lions in the Data
+# How Did Morocco Reach the Semi-Final?
 
 **Live site:** https://ryeggouti.github.io/morocco-world-cup-2022/
 
