@@ -92,7 +92,22 @@
   .stat-label { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
 
   /* ===== 4. Shot map ===== */
-  .shotmap { width: 100%; height: auto; border-radius: 10px; margin-top: 12px; display: block; }
+  .shotmap { width: 100%; height: auto; border-radius: 10px; margin-top: 12px; display: block; background: var(--bg); }
+  .pitch rect, .pitch path { fill: none; stroke: #3A4A42; stroke-width: 0.35; }
+  .pitch .goal { fill: #3A4A42; }
+  .pitch .spot { fill: #3A4A42; }
+  .shot { stroke: var(--bg); stroke-width: 0.3; cursor: pointer; transition: r 0.15s; }
+  .shot:focus { outline: none; }
+  .shot.selected { stroke: #fff; stroke-width: 0.6; }
+  .select {
+    width: 100%; font: 600 1rem var(--body); color: var(--text);
+    background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+  }
+  .summary { color: var(--muted); font-size: 0.9rem; margin: 10px 0 0; }
+  .detail {
+    margin: 12px 0 0; padding: 12px 14px; border-radius: 10px;
+    background: var(--bg); border: 1px solid var(--line); font-size: 0.95rem; min-height: 48px;
+  }
 
   /* ===== 6 and 7. How I built it, footer ===== */
   ul { padding-left: 20px; margin: 0 0 12px; }
@@ -135,8 +150,24 @@
   <section>
     <div class="label">Finding 2</div>
     <h2>Defending the box</h2>
-    <p>Every shot Morocco's four knockout opponents took. They often reached the box, but mostly for low-quality chances. Spain and Portugal took 24 shots combined and scored none.</p>
-    <img class="shotmap" src="shotmap.png" alt="Shot map of knockout opponents' shots against Morocco. Most are small, low-xG dots inside the box; the four goals came against France and Croatia.">
+    <p>Every shot Morocco's opponents took. In the knockouts they often reached the box, but mostly for low-quality chances. Spain and Portugal took 24 shots combined and scored none.</p>
+    <label class="label" for="shot-filter" style="display:block;margin-top:16px">Show shots from</label>
+    <select id="shot-filter" class="select"></select>
+    <p class="summary" id="shot-summary">Loading shots…</p>
+    <svg id="shotmap" class="shotmap" viewBox="-2 -2 84 64" role="img" aria-label="Interactive shot map of opponents' shots against Morocco">
+      <!-- Pitch lines, in StatsBomb units (pitch is 120 x 80, we show the attacking half) -->
+      <g class="pitch">
+        <rect x="0" y="0" width="80" height="60" />
+        <rect x="18" y="0" width="44" height="18" />  <!-- penalty box -->
+        <rect x="30" y="0" width="20" height="6" />   <!-- six-yard box -->
+        <rect x="36" y="-1.5" width="8" height="1.5" class="goal" />
+        <path d="M 32 18 A 10 10 0 0 0 48 18" />      <!-- penalty arc -->
+        <path d="M 30 60 A 10 10 0 0 1 50 60" />      <!-- centre circle -->
+        <circle cx="40" cy="12" r="0.4" class="spot" />
+      </g>
+      <g id="shot-dots"></g>
+    </svg>
+    <p class="detail" id="shot-detail">Tap a dot to see who shot, when, and what happened.</p>
     <div class="legend">
       <span><span class="dot" style="background:var(--gray)"></span>No goal</span>
       <span><span class="dot" style="background:var(--red)"></span>Goal</span>
@@ -212,7 +243,80 @@ fetch("data.json")
     buildMatchChart(data.matches);
     buildPlayerChart(data);
     buildDefenseChart(data.matches);
+    // Shots load separately, so the rest of the page still works if this file is missing
+    fetch("shots.json")
+      .then(response => response.json())
+      .then(shots => buildShotMap(shots, data.matches))
+      .catch(() => {
+        document.getElementById("shot-summary").textContent = "Shot data could not be loaded.";
+      });
   });
+
+// Finding 2: interactive shot map
+function buildShotMap(shots, matches) {
+  const filter = document.getElementById("shot-filter");
+  const dots = document.getElementById("shot-dots");
+  const summary = document.getElementById("shot-summary");
+  const detail = document.getElementById("shot-detail");
+
+  // Dropdown options: two groups, then every match
+  const options = [
+    { value: "knockouts", text: "All knockout matches" },
+    { value: "group", text: "All group matches" },
+    { value: "all", text: "All 7 matches" },
+  ];
+  // Match ids aren't in data.json, so we pair each match by its stage + opponent
+  matches.forEach(m => options.push({ value: m.stage + "|" + m.opponent, text: `${m.opponent} (${m.stage})` }));
+  options.forEach(o => filter.add(new Option(o.text, o.value)));
+
+  // StatsBomb's short outcome codes, in plain words
+  const OUTCOME = {
+    "Off T": "Off target", "Wayward": "Way off target", "Post": "Hit the post",
+    "Saved Off Target": "Saved", "Saved to Post": "Saved onto the post",
+  };
+  const outcomeText = o => OUTCOME[o] || o;
+
+  function draw() {
+    const choice = filter.value;
+    const shown = shots.filter(s =>
+      choice === "all" ||
+      (choice === "group" && s.stage === "Group") ||
+      (choice === "knockouts" && s.stage !== "Group") ||
+      choice === s.stage + "|" + s.team
+    );
+
+    const goals = shown.filter(s => s.outcome === "Goal").length;
+    const totalXg = shown.reduce((sum, s) => sum + s.xg, 0);
+    summary.textContent = `${shown.length} shot${shown.length === 1 ? "" : "s"} · ${goals} goal${goals === 1 ? "" : "s"} · ${totalXg.toFixed(2)} xG`;
+
+    // Biggest dots drawn first, so small dots stay tappable on top
+    dots.innerHTML = "";
+    [...shown].sort((a, b) => b.xg - a.xg).forEach(s => {
+      const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      dot.setAttribute("cx", s.y);          // pitch width becomes left to right
+      dot.setAttribute("cy", 120 - s.x);    // goal at the top
+      dot.setAttribute("r", 0.8 + s.xg * 4);
+      dot.setAttribute("fill", s.outcome === "Goal" ? RED : GRAY);
+      dot.setAttribute("class", "shot");
+      dot.setAttribute("tabindex", "0");
+      dot.setAttribute("aria-label", `${s.player}, ${s.minute}', ${s.xg} xG, ${outcomeText(s.outcome)}`);
+      const select = () => {
+        dots.querySelectorAll(".selected").forEach(d => d.classList.remove("selected"));
+        dot.classList.add("selected");
+        detail.innerHTML =
+          `<strong>${s.player}</strong> (${s.team}), ${s.minute}'<br>` +
+          `xG ${s.xg.toFixed(2)} · ${outcomeText(s.outcome)}`;
+      };
+      dot.addEventListener("click", select);
+      dot.addEventListener("keydown", e => { if (e.key === "Enter") select(); });
+      dots.appendChild(dot);
+    });
+    detail.textContent = "Tap a dot to see who shot, when, and what happened.";
+  }
+
+  filter.addEventListener("change", draw);
+  draw();
+}
 
 // Finding 4: how dangerous opponents' shots were, match by match
 function buildDefenseChart(matches) {
