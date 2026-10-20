@@ -1,4 +1,6 @@
-# Morocco at the 2022 World Cup: a data analysis
+# Lions in the Data
+
+**Live site:** https://ryeggouti.github.io/morocco-world-cup-2022/
 
 In 2022, Morocco became the first African team to reach a World Cup semi-final. I used free match data to understand how.
 
@@ -8,15 +10,18 @@ In 2022, Morocco became the first African team to reach a World Cup semi-final. 
 3. **Beating the odds.** En-Nesyri scored 2 goals from 1.05 xG, and Ziyech scored from 10 shots worth only 0.31 xG. As a team, Morocco scored 6 goals from 5.54 xG.
 4. **Stronger when it got harder.** In the group stage, opponents' shots against Morocco were worth 0.13 xG each (28th of 32 teams). In the knockouts against Spain, Portugal, France and Croatia, that dropped to 0.08. Over all 7 matches (0.095), Morocco ranked 5th of the 8 teams that played 5+ matches, almost level with Argentina and England.
 
+## Website features
+- Shots / xG toggle on the match chart
+- Interactive shot map: filter by match and tap any shot to see the player, minute, xG and outcome
+- All numbers are calculated from the exported data, including penalty shootout results
 
 ## How I built it
 - **Data:** StatsBomb Open Data (free event data for every 2022 World Cup match)
-- **Tools:** Python (pandas, matplotlib, mplsoccer) in Google Colab
+- **Analysis:** Python (pandas, matplotlib, mplsoccer) in Google Colab
+- **Website:** HTML, CSS, JavaScript and Chart.js, hosted on GitHub Pages
 - I used AI tools to help write some of the code. I chose the questions, checked the results, and wrote the findings.
 
 ## Data notes
-- Penalty shootout kicks are excluded from shot and xG totals (Morocco beat Spain on penalties after a 0–0 draw).
+- Penalty shootout kicks are excluded from shot and xG totals (Morocco beat Spain 3–0 on penalties after a 0–0 draw).
 - StatsBomb credits the 72' goal vs Belgium to Romain Saïss; official records credit Abdelhamid Sabiri. The team total (6 goals) matches official results.
-
-## Coming next
-A website with interactive charts.
+- Comparisons between teams are limited by sample size: teams played 3 to 7 matches against different opponents.
