@@ -7,402 +7,900 @@
 <meta name="description" content="How Morocco reached the 2022 World Cup semi-final, told through numbers.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  /* ===== Design tokens (colors and fonts used everywhere) ===== */
-  :root {
-    --bg: #0E1512;        /* page background: near-black green */
-    --card: #17211C;      /* section panels */
-    --line: #26332C;      /* borders and chart grid */
-    --text: #D9DED9;      /* body text: light gray, easier to read than pure white */
-    --muted: #9AA39D;     /* small labels */
-    --red: #C1272D;       /* Morocco */
-    --gray: #8A8F8C;      /* opponents */
-    --green: #006233;     /* accents */
-    --display: "Bricolage Grotesque", system-ui, sans-serif;
-    --body: "Inter", system-ui, sans-serif;
-  }
+/* =====================================================================
+   DESIGN TOKENS: every color, font and spacing value lives here once
+   ===================================================================== */
+:root {
+  --background: #08080a;               /* near-black page */
+  --foreground: #f3f1ea;               /* warm off-white text */
+  --surface: #111114;                  /* panels */
+  --muted: #807f78;                    /* secondary text */
+  --line: rgba(243, 241, 234, 0.1);    /* thin dividers */
+  --line-strong: rgba(243, 241, 234, 0.22);
+  --accent: #e4343b;                   /* Moroccan red, brightened for a dark background */
+  --green: #1f8a50;                    /* Moroccan green, used for the marquee stars */
 
-  /* ===== Page layout: one column, phone first ===== */
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font: 17px/1.6 var(--body);
-  }
-  main { max-width: 680px; margin: 0 auto; padding: 0 16px 48px; }
-  h1, h2 { font-family: var(--display); color: #fff; line-height: 1.1; margin: 0; }
-  h2 { font-size: 1.6rem; margin-bottom: 12px; }
-  p { margin: 0 0 12px; }
-  a { color: #fff; }
-  section {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 24px 20px;
-    margin-top: 20px;
-  }
-  .label {
-    font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
-  }
+  --font-display: "Anton", "Impact", "Arial Narrow", sans-serif;
+  --font-sans: "Onest", system-ui, sans-serif;
 
-  /* ===== 1. Hero ===== */
-  .hero { padding: 56px 4px 24px; }
-  .hero h1 { font-size: clamp(2.4rem, 11vw, 3.6rem); }
-  .hero .sub { color: var(--muted); font-size: 1.05rem; margin-top: 12px; }
-  .big-number {
-    font-family: var(--display); color: var(--red);
-    font-size: clamp(4rem, 22vw, 6.5rem); line-height: 1; margin-top: 36px;
-  }
-  .stripe { height: 4px; width: 72px; background: var(--green); margin-top: 28px; border-radius: 2px; }
+  --gutter: 2.5rem;                    /* page side padding */
+  --section: 9rem;                     /* space above and below each section */
 
-  /* ===== 2. Timeline of the run ===== */
-  .run { list-style: none; margin: 0; padding: 0; }
-  .run li {
-    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-    padding: 12px 0 12px 16px; border-left: 3px solid var(--line); position: relative;
-  }
-  .run li::before {   /* the dot on the timeline */
-    content: ""; position: absolute; left: -7px; top: 19px;
-    width: 11px; height: 11px; border-radius: 50%; background: var(--gray);
-  }
-  .run li.win::before { background: var(--red); }
-  .run .stage { font-size: 0.8rem; color: var(--muted); }
-  .run .score { font-weight: 600; white-space: nowrap; color: #fff; }
-  .match-btn {   /* makes the whole row tappable while looking like plain text */
-    all: unset; box-sizing: border-box; width: 100%; cursor: pointer;
-    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-  }
-  .match-btn:focus-visible { outline: 2px solid var(--red); outline-offset: 4px; border-radius: 6px; }
-  .run .note { display: block; font-size: 0.8rem; color: var(--muted); font-weight: 400; text-align: right; }
+  /* Type scale */
+  --t-hero: 28rem;  --t-display: 7.5rem; --t-h1: 5rem; --t-h2: 3.25rem;
+  --t-h3: 1.75rem;  --t-lead: 1.375rem;  --t-body: 1.0625rem; --t-eyebrow: 0.8125rem;
 
-  /* ===== Charts ===== */
-  .chart-box { position: relative; height: 320px; margin-top: 16px; }
-  .toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; margin-top: 4px; }
-  .toggle button {
-    font: 600 0.9rem var(--body); color: var(--muted); background: none;
-    border: 0; border-radius: 999px; padding: 6px 16px; cursor: pointer;
-  }
-  .toggle button[aria-pressed="true"] { background: var(--red); color: #fff; }
-  .legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; color: var(--muted); margin-top: 12px; }
-  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  /* Motion: "ease out expo" is the soft, fast-then-slow curve used everywhere */
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
 
-  /* ===== Finding 4: two big numbers side by side ===== */
-  .stats { display: flex; gap: 24px; margin-top: 8px; }
-  .stat { font-family: var(--display); font-size: 2.6rem; line-height: 1; color: var(--red); }
-  .stat.gray { color: var(--gray); }
-  .stat-label { font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
+/* =====================================================================
+   ADAPTIVE GRID: the root font size follows the screen width, so every
+   rem-based size scales together, like a zoom that always fits
+   ===================================================================== */
+html { font-size: 16px; background: var(--background); }
+@media (max-width: 1920px) { html { font-size: 0.833333vw; } }  /* 16 * 100 / 1920 */
+@media (max-width: 1440px) { html { font-size: 1.111111vw; } }  /* 16 * 100 / 1440 */
+@media (max-width: 1024px) { html { font-size: 1.5625vw; } }    /* 16 * 100 / 1024 */
+@media (max-width: 640px) {
+  html { font-size: 4.444444vw; }                              /* 16 * 100 / 360 */
+  :root { --gutter: 16px; --section: 6rem; }
+}
 
-  /* ===== 4. Shot map ===== */
-  .shotmap { width: 100%; height: auto; border-radius: 10px; margin-top: 12px; display: block; background: var(--bg); }
-  .pitch rect, .pitch path { fill: none; stroke: #3A4A42; stroke-width: 0.35; }
-  .pitch .goal { fill: #3A4A42; }
-  .pitch .spot { fill: #3A4A42; }
-  .shot { stroke: var(--bg); stroke-width: 0.3; cursor: pointer; transition: r 0.15s; }
-  .shot:focus { outline: none; }
-  .shot.selected { stroke: #fff; stroke-width: 0.6; }
-  .select {
-    width: 100%; font: 600 1rem var(--body); color: var(--text);
-    background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
-  }
-  .summary { color: var(--muted); font-size: 0.9rem; margin: 10px 0 0; }
-  .detail {
-    margin: 12px 0 0; padding: 12px 14px; border-radius: 10px;
-    background: var(--bg); border: 1px solid var(--line); font-size: 0.95rem; min-height: 48px;
-  }
+/* =====================================================================
+   RESET AND BASE
+   ===================================================================== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+ul, ol { list-style: none; }
+button, a { font: inherit; color: inherit; background: none; border: 0; text-decoration: none; cursor: pointer; }
+body {
+  background: var(--background); color: var(--foreground);
+  font-family: var(--font-sans); font-size: var(--t-body); line-height: 1.6;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; overflow-x: hidden;
+}
+body.locked { overflow: hidden; }
+::selection { background: var(--accent); color: var(--background); }
+main { position: relative; width: 100%; overflow-x: hidden; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
 
-  /* ===== 6 and 7. How I built it, footer ===== */
-  ul { padding-left: 20px; margin: 0 0 12px; }
-  footer { text-align: center; color: var(--muted); font-size: 0.9rem; padding: 32px 16px 0; }
+.display { font-family: var(--font-display); font-weight: 400; text-transform: uppercase; letter-spacing: -0.01em; }
+.eyebrow {
+  display: flex; align-items: center; gap: 0.75rem;
+  font-size: var(--t-eyebrow); line-height: 1.2; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.22em; color: var(--muted);
+}
+.eyebrow::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.section { padding: var(--section) var(--gutter); }
+.heading { margin-top: 1.5rem; font-size: var(--t-h2); line-height: 0.95; max-width: 16ch; }
+.lead { margin-top: 2rem; max-width: 46ch; font-size: var(--t-lead); line-height: 1.45; color: var(--muted); }
+.copy { margin-top: 1.5rem; max-width: 46ch; color: var(--muted); }
+.small-label { font-size: var(--t-eyebrow); text-transform: uppercase; letter-spacing: 0.18em; color: var(--muted); }
+@media (min-width: 640px) { .heading { font-size: var(--t-h1); } }
+
+/* Two-column section layout on large screens */
+.split { display: grid; gap: 3rem; }
+@media (min-width: 1024px) {
+  .split { grid-template-columns: repeat(12, 1fr); gap: var(--gutter); }
+  .split > .left { grid-column: span 5; }
+  .split > .right { grid-column: span 7; }
+}
+
+/* =====================================================================
+   REVEAL ANIMATIONS
+   Text is split into letters or words, each hidden below a mask, then
+   slid up when it scrolls into view. Blocks fade and rise.
+   ===================================================================== */
+.mask { display: inline-block; overflow: hidden; vertical-align: top; padding-top: 0.08em; margin-top: -0.08em; }
+.rise {
+  display: inline-block; transform: translateY(110%); opacity: 0;
+  transition: transform 900ms var(--ease-expo), opacity 900ms var(--ease-expo);
+  transition-delay: var(--d, 0ms);
+}
+.revealed .rise { transform: none; opacity: 1; }
+
+.reveal {
+  opacity: 0; transform: translateY(var(--y, 24px));
+  transition: opacity 560ms var(--ease-expo), transform 560ms var(--ease-expo);
+  transition-delay: var(--d, 0ms);
+}
+.reveal.revealed { opacity: 1; transform: none; }
+
+/* =====================================================================
+   PRELOADER: counts to 100%, then wipes upward
+   ===================================================================== */
+#preloader {
+  position: fixed; inset: 0; z-index: 100; background: var(--background);
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 0.75rem;
+  padding: var(--gutter);
+  transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+#preloader .pl-label { transition: opacity 300ms ease-out; }
+#preloader.fade .pl-label { opacity: 0; }
+#preloader.wipe { transform: translateY(-100%); }
+#preloader.done { pointer-events: none; visibility: hidden; }
+.pl-brand { font-family: var(--font-display); font-size: var(--t-h3); text-transform: uppercase; line-height: 1; }
+.pl-count { font-family: var(--font-display); font-size: var(--t-display); line-height: 1; font-variant-numeric: tabular-nums; }
+.pl-count span { color: var(--accent); }
+@media (min-width: 640px) {
+  #preloader { flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 1rem; }
+}
+
+/* =====================================================================
+   NAVIGATION
+   ===================================================================== */
+.site-header {
+  position: fixed; inset-inline: 0; top: 0; z-index: 50; pointer-events: none;
+  background: linear-gradient(to bottom, var(--background) 55%, transparent);   /* keeps scrolled text from clashing with the nav */
+}
+.site-nav {
+  pointer-events: auto; display: flex; align-items: center; justify-content: space-between;
+  padding: 1.5rem var(--gutter);
+}
+.logo { display: flex; align-items: center; gap: 0.75rem; }
+.monogram {
+  display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 50%;
+  border: 1px solid var(--line-strong); font-weight: 600; font-size: 0.875rem; background: var(--background);
+}
+.logo-name { display: none; font-size: var(--t-eyebrow); font-weight: 500; text-transform: uppercase; letter-spacing: 0.22em; color: var(--muted); }
+@media (min-width: 640px) { .logo-name { display: inline; } }
+
+.nav-links { display: none; gap: 2.5rem; }
+.nav-links a {
+  position: relative; font-size: var(--t-eyebrow); font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.18em; color: var(--muted); transition: color 300ms;
+}
+.nav-links a::after {
+  content: ""; position: absolute; left: 0; bottom: -0.25rem; height: 1px; width: 0;
+  background: var(--accent); transition: width 300ms var(--ease-expo);
+}
+.nav-links a:hover { color: var(--foreground); }
+.nav-links a:hover::after { width: 100%; }
+
+.burger { display: grid; place-content: center; gap: 0.375rem; width: 2.5rem; height: 2.5rem; position: relative; z-index: 60; }
+.burger span { display: block; height: 0.125rem; width: 1.5rem; background: var(--foreground); transition: transform 300ms, opacity 300ms; }
+.burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(0.5rem) rotate(45deg); }
+.burger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-0.5rem) rotate(-45deg); }
+@media (min-width: 768px) { .nav-links { display: flex; } .burger { display: none; } }
+
+.mobile-menu {
+  position: fixed; inset: 0; z-index: 55; background: var(--background);
+  display: flex; flex-direction: column; justify-content: center; padding-inline: var(--gutter);
+  opacity: 0; visibility: hidden; transition: opacity 450ms ease-out, visibility 0s 450ms;
+}
+.mobile-menu.open { opacity: 1; visibility: visible; transition: opacity 450ms ease-out; }
+.mobile-menu li { overflow: hidden; }
+.mobile-menu a {
+  display: block; padding-block: 0.5rem; font-family: var(--font-display); font-size: var(--t-h2);
+  text-transform: uppercase; line-height: 1; transform: translateY(48px); opacity: 0;
+  transition: transform 420ms ease-out, opacity 420ms ease-out; transition-delay: var(--d, 0ms);
+}
+.mobile-menu.open a { transform: none; opacity: 1; }
+
+/* =====================================================================
+   HERO
+   ===================================================================== */
+.hero { position: relative; display: flex; flex-direction: column; min-height: 100svh; overflow: hidden; }
+.hero-top {
+  position: relative; z-index: 30; display: flex; flex-direction: column; gap: 2rem;
+  padding: 7rem var(--gutter) 0;
+}
+.hero-roles { font-size: var(--t-h3); line-height: 1.05; }
+.hero-roles .line { display: block; }
+.hero-desc { max-width: 26rem; color: var(--muted); }
+@media (min-width: 640px) {
+  .hero-top { flex-direction: row; align-items: flex-start; justify-content: space-between; padding-top: 8rem; }
+  .hero-roles { font-size: var(--t-h2); }
+  .hero-desc { text-align: right; }
+}
+/* The giant red title. JavaScript sizes it so the widest word fits the screen. */
+.hero-name {
+  position: absolute; inset-inline: 0; bottom: 0; z-index: 10; transform: translateY(4%);
+  display: flex; flex-direction: column; align-items: center;
+  color: var(--accent); font-size: 13rem; line-height: 0.78;
+}
+.hero-name .line { display: block; white-space: nowrap; }
+.hero-fade {
+  position: absolute; inset-inline: 0; bottom: 0; z-index: 20; height: 14vh;
+  background: linear-gradient(to bottom, transparent, var(--background)); pointer-events: none;
+}
+.scroll-cue {
+  position: absolute; bottom: 2rem; left: var(--gutter); z-index: 30;
+  display: flex; align-items: center; gap: 0.75rem;
+  font-size: var(--t-eyebrow); text-transform: uppercase; letter-spacing: 0.22em; color: var(--muted);
+}
+.scroll-cue::before { content: ""; width: 2.5rem; height: 1px; background: var(--accent); }
+@media (max-width: 639px) { .scroll-cue { display: none; } .hero-fade { height: 7vh; } }
+
+/* Hero artwork: every shot taken against Morocco, drawn on a faint pitch behind the title */
+.hero-pitch {
+  position: absolute; left: 50%; top: 50%; z-index: 5; pointer-events: none;
+  width: min(94vw, 50rem); transform: translateX(-50%);   /* JavaScript fits it into the free space */
+}
+.hero-pitch .lines * { fill: none; stroke: rgba(243, 241, 234, 0.08); stroke-width: 0.3; }
+.hero-pitch .lines .solid { fill: rgba(243, 241, 234, 0.08); stroke: none; }
+.hero-shot {
+  opacity: 0; transform: scale(0); transform-box: fill-box; transform-origin: center;
+  animation: shot-in 700ms var(--ease-expo) forwards; animation-delay: var(--d, 0ms);
+}
+@keyframes shot-in { to { opacity: var(--o, 0.45); transform: scale(1); } }
+.hero-caption {
+  position: absolute; right: var(--gutter); bottom: 2rem; z-index: 30; display: none;
+  font-size: var(--t-eyebrow); text-transform: uppercase; letter-spacing: 0.22em; color: var(--muted);
+}
+.hero-caption b { color: var(--accent); font-weight: 500; }
+@media (min-width: 640px) { .hero-caption { display: block; } }
+
+/* =====================================================================
+   MARQUEE: the word list is written twice, then slid left by exactly
+   half its width, forever, so the loop has no visible seam
+   ===================================================================== */
+.marquee { overflow: hidden; border-block: 1px solid var(--line); padding-block: 2rem; }
+.marquee-track { display: flex; width: max-content; animation: marquee 22s linear infinite; }
+.marquee-item { display: flex; align-items: center; font-size: var(--t-h2); white-space: nowrap; }
+.marquee-item::after { content: "★"; margin-inline: 2rem; font-size: 0.5em; color: var(--green); }
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+/* =====================================================================
+   THE RUN: match list
+   ===================================================================== */
+.run-list li { border-top: 1px solid var(--line); }
+.run-list li:last-child { border-bottom: 1px solid var(--line); }
+.match-btn {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; column-gap: 1.5rem;
+  width: 100%; padding: 1.5rem 0; text-align: left;
+}
+.match-btn .idx { font-size: var(--t-h3); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--muted); }
+.match-btn.win .idx { color: var(--accent); }
+.match-btn .team { font-size: var(--t-h3); font-weight: 600; letter-spacing: -0.01em; line-height: 1.15; transition: color 340ms; }
+.match-btn .stage { display: block; margin-top: 0.375rem; }
+.match-btn .score { font-family: var(--font-display); font-size: var(--t-h2); line-height: 1; text-align: right; }
+.match-btn .pens { display: block; margin-top: 0.375rem; text-align: right; color: var(--accent); }
+.match-btn:hover .team { color: var(--accent); }
+
+/* =====================================================================
+   FINDINGS: text beside a chart
+   ===================================================================== */
+.finding + .finding { border-top: 1px solid var(--line); }
+.chart-box { position: relative; height: 24rem; margin-top: 2rem; }
+@media (min-width: 1024px) { .finding .chart-box { margin-top: 0; } }
+.toggle { display: inline-flex; margin-top: 2rem; border: 1px solid var(--line-strong); border-radius: 999px; padding: 0.25rem; }
+.toggle button {
+  font-size: var(--t-eyebrow); font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em;
+  color: var(--muted); border-radius: 999px; padding: 0.625rem 1.25rem; transition: background 300ms, color 300ms;
+}
+.toggle button[aria-pressed="true"] { background: var(--accent); color: var(--background); }
+
+.pair { display: flex; gap: 2.5rem; margin-top: 2rem; }
+.pair .figure { font-family: var(--font-display); font-size: var(--t-h1); line-height: 1; }
+.pair .figure.dim { color: var(--muted); }
+.pair .figure.hot { color: var(--accent); }
+.pair .small-label { margin-top: 0.5rem; display: block; }
+.note { margin-top: 1.5rem; font-size: var(--t-eyebrow); text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); max-width: 46ch; line-height: 1.6; }
+
+/* =====================================================================
+   SHOT MAP: selector list beside the pitch
+   ===================================================================== */
+.selector li { border-top: 1px solid var(--line); }
+.selector li:last-child { border-bottom: 1px solid var(--line); }
+.sel-btn { display: flex; align-items: center; gap: 1.25rem; width: 100%; padding: 1rem 0; text-align: left; }
+.sel-btn .idx { font-size: var(--t-eyebrow); font-variant-numeric: tabular-nums; letter-spacing: 0.18em; color: var(--muted); transition: color 300ms; }
+.sel-btn .name { display: block; font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; color: var(--muted); transition: color 300ms; }
+.sel-btn .sub { display: block; margin-top: 0.125rem; }
+.sel-btn .rule { margin-left: auto; height: 1px; width: 0; background: var(--accent); transition: width 400ms var(--ease-expo); }
+.sel-btn[aria-pressed="true"] .idx { color: var(--accent); }
+.sel-btn[aria-pressed="true"] .name { color: var(--foreground); }
+.sel-btn[aria-pressed="true"] .rule { width: 2.5rem; }
+.sel-btn:hover .name { color: var(--foreground); }
+
+.map-summary { font-family: var(--font-display); font-size: 2.25rem; line-height: 1; text-transform: uppercase; }
+@media (min-width: 640px) { .map-summary { font-size: var(--t-h2); } }
+.map-summary em { font-style: normal; color: var(--accent); }
+.pitch-svg { display: block; width: 100%; height: auto; margin-top: 1.5rem; background: var(--surface); border-radius: 0.25rem; }
+.pitch-svg .lines * { fill: none; stroke: var(--line-strong); stroke-width: 0.3; }
+.pitch-svg .lines .solid { fill: var(--line-strong); stroke: none; }
+.shot { stroke: var(--background); stroke-width: 0.3; cursor: pointer; }
+.shot.selected { stroke: var(--foreground); stroke-width: 0.6; }
+.shot:focus { outline: none; }
+.shot:focus-visible { stroke: var(--foreground); stroke-width: 0.6; }
+.detail { margin-top: 1rem; padding: 1rem 1.25rem; border: 1px solid var(--line); border-radius: 0.25rem; min-height: 4.5rem; color: var(--muted); }
+.detail strong { color: var(--foreground); font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: 1rem; }
+.legend .dot { display: inline-block; width: 0.625rem; height: 0.625rem; border-radius: 50%; margin-right: 0.5rem; vertical-align: middle; }
+
+/* =====================================================================
+   BY THE NUMBERS
+   ===================================================================== */
+.stats { margin-top: 4rem; display: grid; border-top: 1px solid var(--line); }
+.stat { display: flex; flex-direction: column; gap: 1rem; border-bottom: 1px solid var(--line); padding: 2.5rem 0; }
+.stat dd { order: -1; font-family: var(--font-display); font-size: var(--t-display); line-height: 1; transition: color 340ms ease-out; }
+.stat:hover dd { color: var(--accent); }
+.stat dt { max-width: 20ch; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
+@media (min-width: 640px) {
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .stat:nth-child(2n) { border-left: 1px solid var(--line); padding-left: 2rem; }
+}
+@media (min-width: 1024px) {
+  .stats { grid-template-columns: repeat(4, 1fr); }
+  .stat { padding-block: 3rem; }
+  .stat:not(:first-child) { border-left: 1px solid var(--line); padding-left: 2rem; }
+}
+
+/* =====================================================================
+   METHOD AND FOOTER
+   ===================================================================== */
+.method { padding: var(--section) var(--gutter) 0; }
+.method .heading { max-width: 18ch; }
+@media (min-width: 640px) { .method .heading { font-size: var(--t-display); } }
+.big-link {
+  display: inline-flex; align-items: baseline; gap: 0.75rem; margin-top: 3rem;
+  font-size: var(--t-h3); font-weight: 600; letter-spacing: -0.01em;
+  transition: transform 340ms ease-out, color 340ms ease-out;
+}
+.big-link span { color: var(--accent); }
+.big-link:hover { transform: translateX(14px); color: var(--accent); }
+@media (min-width: 640px) { .big-link { font-size: 3rem; gap: 1rem; } }
+
+.footer-bar { margin-top: var(--section); border-top: 1px solid var(--line); padding: 3rem 0; display: grid; gap: 2.5rem; }
+.footer-bar .sig { font-size: var(--t-h2); line-height: 1; }
+.footer-bar .notes li { color: var(--muted); padding-left: 1.25rem; position: relative; }
+.footer-bar .notes li + li { margin-top: 0.75rem; }
+.footer-bar .notes li::before { content: ""; position: absolute; left: 0; top: 0.75em; width: 0.5rem; height: 1px; background: var(--accent); }
+@media (min-width: 1024px) {
+  .footer-bar { grid-template-columns: repeat(12, 1fr); }
+  .footer-bar > :nth-child(1) { grid-column: span 4; }
+  .footer-bar > :nth-child(2) { grid-column: span 5; }
+  .footer-bar > :nth-child(3) { grid-column: span 3; text-align: right; }
+}
+
+/* =====================================================================
+   REDUCED MOTION: people who turn off animations in their phone settings
+   get the final page straight away
+   ===================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  #preloader { display: none; }
+  .marquee-track { animation: none; }
+  .rise, .reveal, .mobile-menu a { transform: none !important; opacity: 1 !important; transition: none !important; }
+}
 </style>
 </head>
-<body>
+<body class="locked">
+
+<!-- PRELOADER -->
+<div id="preloader" aria-hidden="true">
+  <div class="pl-label pl-brand">Lions in the Data</div>
+  <div class="pl-label pl-count"><b id="pl-num">0</b><span>%</span></div>
+</div>
+
+<!-- NAVIGATION -->
+<header class="site-header">
+  <nav class="site-nav" aria-label="Main">
+    <a class="logo" href="#top"><span class="monogram">LD</span><span class="logo-name">Lions in the Data</span></a>
+    <ul class="nav-links">
+      <li><a href="#run">The run</a></li>
+      <li><a href="#findings">Findings</a></li>
+      <li><a href="#shots">Shot map</a></li>
+      <li><a href="#numbers">Numbers</a></li>
+      <li><a href="#method">Method</a></li>
+    </ul>
+    <button class="burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="mobile-menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+</header>
+<div class="mobile-menu" id="mobile-menu">
+  <ul>
+    <li><a href="#run" style="--d:120ms">The run</a></li>
+    <li><a href="#findings" style="--d:180ms">Findings</a></li>
+    <li><a href="#shots" style="--d:240ms">Shot map</a></li>
+    <li><a href="#numbers" style="--d:300ms">Numbers</a></li>
+    <li><a href="#method" style="--d:360ms">Method</a></li>
+  </ul>
+</div>
+
 <main>
 
-  <!-- 1. HERO -->
-  <header class="hero">
-    <div class="label">World Cup 2022 · Data story</div>
-    <h1>Lions in the Data</h1>
-    <p class="sub">How Morocco reached the 2022 World Cup semi-final, told through numbers.</p>
-    <div class="big-number" id="headline-number">–</div>
-    <p>Morocco's shots against Spain were worth <strong id="headline-times">–</strong> as much each as Spain's, measured in expected goals (xG).</p>
-    <div class="stripe"></div>
-  </header>
-
-  <!-- 2. THE RUN -->
-  <section>
-    <div class="label">The run</div>
-    <h2>Seven matches, one semi-final</h2>
-    <p class="label" style="margin:0 0 4px">Tap a match to see its shots</p>
-    <ul class="run" id="run"></ul>
-  </section>
-
-  <!-- 3. FINDING 1 -->
-  <section>
-    <div class="label">Finding 1</div>
-    <h2>Fewer shots, better chances</h2>
-    <p>Spain and Portugal out-shot Morocco. Switch to xG, which measures how likely each shot was to score, and the picture flips.</p>
-    <div class="toggle" role="group" aria-label="Measure">
-      <button type="button" data-measure="shots" aria-pressed="true">Shots</button>
-      <button type="button" data-measure="xg" aria-pressed="false">xG</button>
+  <!-- HERO -->
+  <section class="hero" id="top">
+    <div class="hero-top">
+      <h2 class="hero-roles display" id="hero-roles">
+        <span class="line">Morocco</span>
+        <span class="line">Qatar 2022</span>
+        <span class="line">Semi-final</span>
+        <span class="line">In numbers</span>
+      </h2>
+      <p class="hero-desc reveal" id="hero-desc" style="--y:16px">
+        Morocco became the first African team to reach a World Cup semi-final. I analysed free match data from all 64 games to find out how.
+      </p>
     </div>
-    <div class="chart-box"><canvas id="match-chart" aria-label="Morocco and opponents, shots or xG per match"></canvas></div>
-  </section>
-
-  <!-- 4. FINDING 2 -->
-  <section id="shotmap-section" style="scroll-margin-top:16px">
-    <div class="label">Finding 2</div>
-    <h2>Defending the box</h2>
-    <p>Every shot Morocco's opponents took. In the knockouts they often reached the box, but mostly for low-quality chances. Spain and Portugal took 24 shots combined and scored none.</p>
-    <label class="label" for="shot-filter" style="display:block;margin-top:16px">Show shots from</label>
-    <select id="shot-filter" class="select"></select>
-    <p class="summary" id="shot-summary">Loading shots…</p>
-    <svg id="shotmap" class="shotmap" viewBox="-2 -2 84 64" role="img" aria-label="Interactive shot map of opponents' shots against Morocco">
-      <!-- Pitch lines, in StatsBomb units (pitch is 120 x 80, we show the attacking half) -->
-      <g class="pitch">
+    <svg class="hero-pitch" viewBox="-2 -2 84 64" aria-hidden="true">
+      <defs>
+        <!-- "Liquid" effect: noise that pushes the dots around. Its strength is animated on hover. -->
+        <filter id="liquid" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence id="liquid-noise" type="fractalNoise" baseFrequency="0.009" numOctaves="2" result="noise" />
+          <feDisplacementMap id="liquid-map" in="SourceGraphic" in2="noise" scale="0" />
+        </filter>
+      </defs>
+      <g class="lines">
         <rect x="0" y="0" width="80" height="60" />
-        <rect x="18" y="0" width="44" height="18" />  <!-- penalty box -->
-        <rect x="30" y="0" width="20" height="6" />   <!-- six-yard box -->
-        <rect x="36" y="-1.5" width="8" height="1.5" class="goal" />
-        <path d="M 32 18 A 10 10 0 0 0 48 18" />      <!-- penalty arc -->
-        <path d="M 30 60 A 10 10 0 0 1 50 60" />      <!-- centre circle -->
-        <circle cx="40" cy="12" r="0.4" class="spot" />
+        <rect x="18" y="0" width="44" height="18" />
+        <rect x="30" y="0" width="20" height="6" />
+        <rect class="solid" x="36" y="-1.5" width="8" height="1.5" />
+        <path d="M 32 18 A 10 10 0 0 0 48 18" />
+        <path d="M 30 60 A 10 10 0 0 1 50 60" />
       </g>
-      <g id="shot-dots"></g>
+      <g id="hero-dots" filter="url(#liquid)"></g>
     </svg>
-    <p class="detail" id="shot-detail">Tap a dot to see who shot, when, and what happened.</p>
-    <div class="legend">
-      <span><span class="dot" style="background:var(--gray)"></span>No goal</span>
-      <span><span class="dot" style="background:var(--red)"></span>Goal</span>
-      <span>Bigger dot = higher xG</span>
+    <h1 class="hero-name display" id="hero-name" aria-label="Lions in the Data">
+      <span class="line">Atlas</span>
+      <span class="line">Lions</span>
+    </h1>
+    <div class="hero-fade"></div>
+    <div class="scroll-cue reveal" id="scroll-cue" style="--y:0px">Scroll to enter</div>
+    <div class="hero-caption reveal" id="hero-caption" style="--y:0px">Every shot against Morocco · <b id="hero-count">–</b></div>
+  </section>
+
+  <!-- MARQUEE: finding titles, written twice for a seamless loop -->
+  <section class="marquee" aria-label="Findings">
+    <div class="marquee-track display" id="marquee"></div>
+  </section>
+
+  <!-- THE RUN -->
+  <section class="section split" id="run">
+    <div class="left">
+      <div class="eyebrow reveal">The run</div>
+      <h2 class="heading display split-words">Seven matches, one semi-final.</h2>
+      <p class="lead reveal">Three group games, four knockouts. Tap any match to see every shot its opponent took.</p>
+    </div>
+    <ul class="right run-list" id="run-list"></ul>
+  </section>
+
+  <!-- FINDING 1 -->
+  <section class="section split finding" id="findings">
+    <div class="left">
+      <div class="eyebrow reveal">Finding 01</div>
+      <h2 class="heading display split-words">Fewer shots, better chances.</h2>
+      <p class="copy reveal">Spain and Portugal out-shot Morocco. Switch to xG, which measures how likely each shot was to score, and the picture flips.</p>
+      <div class="toggle reveal" role="group" aria-label="Measure">
+        <button type="button" data-measure="shots" aria-pressed="true">Shots</button>
+        <button type="button" data-measure="xg" aria-pressed="false">xG</button>
+      </div>
+    </div>
+    <div class="right reveal"><div class="chart-box"><canvas id="match-chart" aria-label="Morocco and opponents, shots or xG per match"></canvas></div></div>
+  </section>
+
+  <!-- FINDING 2: interactive shot map -->
+  <section class="section finding" id="shots" style="scroll-margin-top: 4rem">
+    <div class="eyebrow reveal">Finding 02</div>
+    <h2 class="heading display split-words">Defending the box.</h2>
+    <p class="copy reveal">Every shot Morocco's opponents took. In the knockouts they often reached the box, but mostly for low-quality chances. Spain and Portugal took 24 shots combined and scored none.</p>
+    <div class="split" style="margin-top: 4rem">
+      <ul class="left selector" id="selector" aria-label="Choose matches"></ul>
+      <div class="right reveal">
+        <p class="map-summary" id="shot-summary" aria-live="polite">Loading shots…</p>
+        <svg class="pitch-svg" id="pitch" viewBox="-2 -2 84 64" role="img" aria-label="Shot map of opponents' shots against Morocco">
+          <!-- Pitch lines in StatsBomb units: the pitch is 120 by 80, we show the half Morocco defended -->
+          <g class="lines">
+            <rect x="0" y="0" width="80" height="60" />
+            <rect x="18" y="0" width="44" height="18" />   <!-- penalty box -->
+            <rect x="30" y="0" width="20" height="6" />    <!-- six-yard box -->
+            <rect class="solid" x="36" y="-1.5" width="8" height="1.5" /> <!-- goal -->
+            <path d="M 32 18 A 10 10 0 0 0 48 18" />       <!-- penalty arc -->
+            <path d="M 30 60 A 10 10 0 0 1 50 60" />       <!-- centre circle -->
+            <circle class="solid" cx="40" cy="12" r="0.4" />
+          </g>
+          <g id="shot-dots"></g>
+        </svg>
+        <p class="detail" id="shot-detail">Tap a dot to see who shot, when, and what happened.</p>
+        <div class="legend small-label">
+          <span><span class="dot" style="background: var(--muted)"></span>No goal</span>
+          <span><span class="dot" style="background: var(--accent)"></span>Goal</span>
+          <span>Bigger dot = higher xG</span>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- 5. FINDING 3 -->
-  <section>
-    <div class="label">Finding 3</div>
-    <h2>Beating the odds</h2>
-    <p>En-Nesyri scored 2 goals from 1.05 xG. Ziyech scored from 10 shots worth only 0.31 xG. As a team, Morocco scored <span id="team-goals">–</span> goals from <span id="team-xg">–</span> xG.</p>
-    <div class="chart-box" style="height:360px"><canvas id="player-chart" aria-label="Expected goals and actual goals per Moroccan player"></canvas></div>
-  </section>
-
-  <!-- 5b. FINDING 4 -->
-  <section>
-    <div class="label">Finding 4</div>
-    <h2>Stronger when it got harder</h2>
-    <p>xG per shot conceded measures how dangerous the average shot against Morocco was. In the group stage, Morocco ranked only 28th of 32 teams. Against Spain, Portugal, France and Croatia in the knockouts, it dropped sharply.</p>
-    <div class="stats">
-      <div><div class="stat gray" id="group-xgps">–</div><div class="stat-label">per shot, group stage</div></div>
-      <div><div class="stat" id="ko-xgps">–</div><div class="stat-label">per shot, knockouts</div></div>
+  <!-- FINDING 3 -->
+  <section class="section split finding">
+    <div class="left">
+      <div class="eyebrow reveal">Finding 03</div>
+      <h2 class="heading display split-words">Beating the odds.</h2>
+      <p class="copy reveal">En-Nesyri scored 2 goals from 1.05 xG. Ziyech scored from 10 shots worth only 0.31 xG. As a team, Morocco scored <span id="team-goals">–</span> goals from <span id="team-xg">–</span> xG.</p>
     </div>
-    <div class="chart-box"><canvas id="defense-chart" aria-label="xG per shot conceded by Morocco in each match"></canvas></div>
-    <p style="margin-top:16px">Over all 7 matches (0.095), Morocco ranked 5th of the 8 teams that played 5 or more matches, almost level with Argentina (0.094) and England (0.093).</p>
-    <p class="label" style="margin:0">Group-stage figures rest on just 20 shots, so treat single matches with care.</p>
+    <div class="right reveal"><div class="chart-box" style="height: 28rem"><canvas id="player-chart" aria-label="Expected goals and actual goals per Moroccan player"></canvas></div></div>
   </section>
 
-  <!-- 6. HOW I BUILT IT -->
-  <section>
-    <div class="label">Method</div>
-    <h2>How I built it</h2>
-    <ul>
-      <li><strong>Data:</strong> StatsBomb Open Data, free event data for every 2022 World Cup match.</li>
-      <li><strong>Analysis:</strong> Python (pandas, matplotlib, mplsoccer) in Google Colab.</li>
-      <li><strong>Website:</strong> HTML, CSS and Chart.js, hosted on GitHub Pages.</li>
-      <li>I used AI tools to help write some of the code. I chose the questions, checked the results and wrote the findings.</li>
-    </ul>
-    <p class="label" style="margin-top:20px">Data notes</p>
-    <ul>
-      <li>Penalty shootout kicks are left out of shot and xG totals.</li>
-      <li>StatsBomb credits the 72' goal against Belgium to Romain Saïss; official records credit Abdelhamid Sabiri. The team total of 6 goals matches official results.</li>
-    </ul>
+  <!-- FINDING 4 -->
+  <section class="section split finding">
+    <div class="left">
+      <div class="eyebrow reveal">Finding 04</div>
+      <h2 class="heading display split-words">Stronger when it got harder.</h2>
+      <p class="copy reveal">xG per shot conceded measures how dangerous the average shot against Morocco was. In the group stage, Morocco ranked only 28th of 32 teams. Against Spain, Portugal, France and Croatia, it dropped sharply.</p>
+      <div class="pair reveal">
+        <div><div class="figure dim" id="group-xgps">–</div><span class="small-label">Per shot, group stage</span></div>
+        <div><div class="figure hot" id="ko-xgps">–</div><span class="small-label">Per shot, knockouts</span></div>
+      </div>
+      <p class="copy reveal">Over all 7 matches (0.095), Morocco ranked 5th of the 8 teams that played 5 or more matches, almost level with Argentina (0.094) and England (0.093).</p>
+      <p class="note reveal">Group-stage figures rest on just 20 shots, so treat single matches with care.</p>
+    </div>
+    <div class="right reveal"><div class="chart-box"><canvas id="defense-chart" aria-label="xG per shot conceded by Morocco in each match"></canvas></div></div>
   </section>
 
-  <!-- 7. FOOTER -->
-  <footer>
-    <p>Code and analysis on <a href="https://github.com/ryeggouti/morocco-world-cup-2022">GitHub</a></p>
+  <!-- BY THE NUMBERS -->
+  <section class="section" id="numbers">
+    <div class="eyebrow reveal">By the numbers</div>
+    <h2 class="heading display split-words" style="font-size: var(--t-h2); line-height: 1">The run, measured.</h2>
+    <dl class="stats">
+      <div class="stat reveal" style="--d:0ms"><dt>Better chances per shot than Spain, round of 16</dt><dd id="n-ratio">–</dd></div>
+      <div class="stat reveal" style="--d:110ms"><dt id="n-sp-label">Goals Spain and Portugal scored from their shots</dt><dd id="n-sp">–</dd></div>
+      <div class="stat reveal" style="--d:220ms"><dt id="n-goals-label">Goals Morocco scored</dt><dd id="n-goals">–</dd></div>
+      <div class="stat reveal" style="--d:330ms"><dt>World Cup matches analysed</dt><dd>64</dd></div>
+    </dl>
+  </section>
+
+  <!-- METHOD AND FOOTER -->
+  <footer class="method" id="method">
+    <div class="eyebrow reveal">How I built it</div>
+    <h2 class="heading display split-words">Free data, Python, and a lot of checking.</h2>
+    <p class="lead reveal">Event data for every 2022 World Cup match from StatsBomb Open Data, analysed in Python (pandas, matplotlib, mplsoccer) in Google Colab.</p>
+    <p class="copy reveal">The site is plain HTML, CSS and JavaScript with Chart.js, hosted on GitHub Pages. I used AI tools to help write some of the code; I chose the questions, checked the results and wrote the findings.</p>
+    <a class="big-link reveal" href="https://github.com/ryeggouti/morocco-world-cup-2022" target="_blank" rel="noreferrer noopener">View the code on GitHub <span>↗</span></a>
+
+    <div class="footer-bar">
+      <div>
+        <p class="sig display">Lions in the Data</p>
+        <p class="small-label" style="margin-top: 1rem">Data: StatsBomb Open Data</p>
+      </div>
+      <div>
+        <p class="small-label" style="margin-bottom: 1rem">Data notes</p>
+        <ul class="notes">
+          <li>Penalty shootout kicks are left out of shot and xG totals.</li>
+          <li>StatsBomb credits the 72' goal against Belgium to Romain Saïss; official records credit Abdelhamid Sabiri. The team total of 6 goals matches official results.</li>
+          <li>Teams played 3 to 7 matches against different opponents, so comparisons between teams are approximate.</li>
+        </ul>
+      </div>
+      <div>
+        <p class="small-label">© <span id="year">2026</span> ryeggouti</p>
+        <p class="small-label" style="margin-top: 0.75rem">Design inspired by a portfolio template</p>
+      </div>
+    </div>
   </footer>
 
 </main>
 
+<!-- Smooth scrolling (Lenis). Loaded separately: if it fails, the page still works with normal scrolling. -->
+<script type="module">
+  import("https://cdn.jsdelivr.net/npm/lenis@1.3.19/dist/lenis.mjs")
+    .then(({ default: Lenis }) => {
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const lenis = new Lenis({ smoothWheel: true });
+      window.lenis = lenis;
+      if (document.body.classList.contains("locked")) lenis.stop();
+      const raf = t => { lenis.raf(t); requestAnimationFrame(raf); };
+      requestAnimationFrame(raf);
+    })
+    .catch(() => {});
+</script>
+
 <script>
-// Colors from the design tokens above, so charts match the page
+/* =====================================================================
+   SETUP
+   ===================================================================== */
 const css = getComputedStyle(document.documentElement);
-const RED = css.getPropertyValue("--red").trim();
-const GRAY = css.getPropertyValue("--gray").trim();
-const LINE = css.getPropertyValue("--line").trim();
-const MUTED = css.getPropertyValue("--muted").trim();
+const token = name => css.getPropertyValue(name).trim();
+const ACCENT = token("--accent"), MUTED = token("--muted"), FOREGROUND = token("--foreground");
+const LINE = "rgba(243, 241, 234, 0.1)";
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+document.getElementById("year").textContent = new Date().getFullYear();
 
-// Shared chart styling
-Chart.defaults.color = MUTED;
-Chart.defaults.font.family = "Inter, system-ui, sans-serif";
-Chart.defaults.borderColor = LINE;
+// Above 1920px wide, grow the root font size a little so the layout keeps its proportions
+function applyAdaptiveGrid() {
+  const w = innerWidth, base = 16, baseW = 1920, coef = 0.6666;
+  const size = base - (base * (((baseW - w) / baseW) * 100 * coef)) / 100;
+  if (size > base) document.documentElement.style.fontSize = size + "px";
+  else document.documentElement.style.removeProperty("font-size");
+}
+applyAdaptiveGrid();
+addEventListener("resize", applyAdaptiveGrid);
 
-// Load the data exported from Colab, then build every part of the page
-fetch("data.json")
-  .then(response => response.json())
-  .then(data => {
-    buildHeadline(data.matches);
-    buildRun(data.matches);
-    buildMatchChart(data.matches);
-    buildPlayerChart(data);
-    buildDefenseChart(data.matches);
-    // Shots load separately, so the rest of the page still works if this file is missing
-    fetch("shots.json")
-      .then(response => response.json())
-      .then(shots => buildShotMap(shots, data.matches))
-      .catch(() => {
-        document.getElementById("shot-summary").textContent = "Shot data could not be loaded.";
-      });
+// Smooth scroll to an element, leaving room for the nav (uses Lenis when it loaded)
+function scrollToEl(el) {
+  const offset = -110;
+  if (window.lenis) return window.lenis.scrollTo(el, { offset });
+  scrollTo({ top: el.getBoundingClientRect().top + scrollY + offset, behavior: REDUCED ? "auto" : "smooth" });
+}
+
+/* =====================================================================
+   TEXT SPLITTING: wrap each letter or word in a mask so it can rise into view
+   ===================================================================== */
+function splitLetters(lineEl, startDelay, stagger) {
+  const text = lineEl.textContent;
+  lineEl.textContent = "";
+  lineEl.setAttribute("aria-hidden", "true");
+  const mask = document.createElement("span");
+  mask.className = "mask";
+  [...text].forEach((ch, i) => {
+    const s = document.createElement("span");
+    s.className = "rise";
+    s.textContent = ch;
+    s.style.setProperty("--d", startDelay + i * stagger + "ms");
+    mask.appendChild(s);
   });
+  lineEl.appendChild(mask);
+}
 
-// Finding 2: interactive shot map
-function buildShotMap(shots, matches) {
-  const filter = document.getElementById("shot-filter");
-  const dots = document.getElementById("shot-dots");
-  const summary = document.getElementById("shot-summary");
-  const detail = document.getElementById("shot-detail");
+function splitWords(el, stagger = 45) {
+  const words = el.textContent.trim().split(/\s+/);
+  el.setAttribute("aria-label", el.textContent.trim());
+  el.textContent = "";
+  words.forEach((word, i) => {
+    const mask = document.createElement("span");
+    mask.className = "mask";
+    mask.setAttribute("aria-hidden", "true");
+    const s = document.createElement("span");
+    s.className = "rise";
+    s.textContent = word;
+    s.style.setProperty("--d", i * stagger + "ms");
+    mask.appendChild(s);
+    el.appendChild(mask);
+    if (i < words.length - 1) el.appendChild(document.createTextNode(" "));
+  });
+}
 
-  // Dropdown options: two groups, then every match
-  const options = [
-    { value: "knockouts", text: "All knockout matches" },
-    { value: "group", text: "All group matches" },
-    { value: "all", text: "All 7 matches" },
-  ];
-  // Match ids aren't in data.json, so we pair each match by its stage + opponent
-  matches.forEach(m => options.push({ value: m.stage + "|" + m.opponent, text: `${m.opponent} (${m.stage})` }));
-  options.forEach(o => filter.add(new Option(o.text, o.value)));
+/* =====================================================================
+   IN-VIEW REVEALS: when an element first appears on screen, reveal it once
+   ===================================================================== */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add("revealed"); observer.unobserve(e.target); }
+  });
+}, { threshold: 0 });
+const watch = el => (REDUCED ? el.classList.add("revealed") : observer.observe(el));
 
-  // StatsBomb's short outcome codes, in plain words
-  const OUTCOME = {
-    "Off T": "Off target", "Wayward": "Way off target", "Post": "Hit the post",
-    "Saved Off Target": "Saved", "Saved to Post": "Saved onto the post",
-  };
-  const outcomeText = o => OUTCOME[o] || o;
+document.querySelectorAll(".split-words").forEach(el => { splitWords(el); watch(el); });
+document.querySelectorAll("main .reveal").forEach(el => {
+  if (el.closest(".hero")) return;    // the hero has its own timed entrance
+  watch(el);
+});
 
-  function draw() {
-    const choice = filter.value;
-    const shown = shots.filter(s =>
-      choice === "all" ||
-      (choice === "group" && s.stage === "Group") ||
-      (choice === "knockouts" && s.stage !== "Group") ||
-      choice === s.stage + "|" + s.team
-    );
+/* =====================================================================
+   PRELOADER AND HERO ENTRANCE
+   ===================================================================== */
+const COUNT_MS = 1600;
+let seen = false;
+try { seen = sessionStorage.getItem("ld-seen") === "1"; sessionStorage.setItem("ld-seen", "1"); } catch (e) {}
 
-    const goals = shown.filter(s => s.outcome === "Goal").length;
-    const totalXg = shown.reduce((sum, s) => sum + s.xg, 0);
-    summary.textContent = `${shown.length} shot${shown.length === 1 ? "" : "s"} · ${goals} goal${goals === 1 ? "" : "s"} · ${totalXg.toFixed(2)} xG`;
+const heroName = document.getElementById("hero-name");
+heroName.querySelectorAll(".line").forEach((line, i) => splitLetters(line, i * 240, 52));
+document.querySelectorAll("#hero-roles .line").forEach(line => splitWords(line, 40));
 
-    // Biggest dots drawn first, so small dots stay tappable on top
-    dots.innerHTML = "";
-    [...shown].sort((a, b) => b.xg - a.xg).forEach(s => {
-      const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      dot.setAttribute("cx", s.y);          // pitch width becomes left to right
-      dot.setAttribute("cy", 120 - s.x);    // goal at the top
-      dot.setAttribute("r", 0.8 + s.xg * 4);
-      dot.setAttribute("fill", s.outcome === "Goal" ? RED : GRAY);
-      dot.setAttribute("class", "shot");
-      dot.setAttribute("tabindex", "0");
-      dot.setAttribute("aria-label", `${s.player}, ${s.minute}', ${s.xg} xG, ${outcomeText(s.outcome)}`);
-      const select = () => {
-        dots.querySelectorAll(".selected").forEach(d => d.classList.remove("selected"));
-        dot.classList.add("selected");
-        detail.innerHTML =
-          `<strong>${s.player}</strong> (${s.team}), ${s.minute}'<br>` +
-          `xG ${s.xg.toFixed(2)} · ${outcomeText(s.outcome)}`;
-      };
-      dot.addEventListener("click", select);
-      dot.addEventListener("keydown", e => { if (e.key === "Enter") select(); });
-      dots.appendChild(dot);
-    });
-    detail.textContent = "Tap a dot to see who shot, when, and what happened.";
+// Size the giant title: its widest word fills ~94% of the screen width,
+// but it never grows past 28rem or up into the text at the top of the hero
+function fitHeroName() {
+  heroName.style.fontSize = "100px";
+  const lines = [...heroName.querySelectorAll(".line")];
+  const widest = Math.max(...lines.map(l => l.scrollWidth));
+  const byWidth = (innerWidth * 0.94 / widest) * 100;
+  const top = document.querySelector(".hero-top");
+  const free = heroName.parentElement.clientHeight - (top.offsetTop + top.offsetHeight) - 24;
+  const byHeight = free / (lines.length * 0.86);
+  const maxPx = parseFloat(getComputedStyle(document.documentElement).fontSize) * 28;
+  heroName.style.fontSize = Math.max(64, Math.min(maxPx, byWidth, byHeight)) + "px";
+  placePitch(top);
+}
+
+// Fit the hero pitch into the space below the top text, so it never sits behind words
+function placePitch(top) {
+  const pitch = document.querySelector(".hero-pitch");
+  const hero = heroName.parentElement;
+  const start = top.offsetTop + top.offsetHeight + 16;
+  const remPx = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const width = Math.min(innerWidth * 0.94, ((hero.clientHeight - start) * 84) / 64, 50 * remPx);
+  pitch.style.top = start + "px";
+  pitch.style.width = Math.max(200, width) + "px";
+}
+fitHeroName();
+addEventListener("resize", fitHeroName);
+if (document.fonts) document.fonts.ready.then(fitHeroName);
+
+function startHero(baseDelay) {
+  const at = (ms, fn) => setTimeout(fn, REDUCED ? 0 : baseDelay + ms);
+  at(0, () => heroName.classList.add("revealed"));
+  document.querySelectorAll("#hero-roles .line").forEach((line, i) => at(200 + i * 80, () => line.classList.add("revealed")));
+  at(400, () => document.getElementById("hero-desc").classList.add("revealed"));
+  at(900, () => document.getElementById("scroll-cue").classList.add("revealed"));
+  at(900, () => document.getElementById("hero-caption").classList.add("revealed"));
+  heroStart = performance.now() + (REDUCED ? 0 : baseDelay);   // when the hero shots may start dropping in
+}
+let heroStart = 0;
+
+function runPreloader() {
+  const pre = document.getElementById("preloader");
+  const unlock = () => { document.body.classList.remove("locked"); if (window.lenis) window.lenis.start(); };
+  if (REDUCED || seen) {
+    pre.classList.add("done");
+    unlock();
+    startHero(REDUCED ? 0 : 150);
+    return;
   }
-
-  filter.addEventListener("change", draw);
-  draw();
+  scrollTo(0, 0);
+  const num = document.getElementById("pl-num");
+  const t0 = performance.now();
+  (function tick(now) {
+    const p = Math.min(1, (now - t0) / COUNT_MS);
+    num.textContent = Math.round(p * 100);
+    if (p < 1) return requestAnimationFrame(tick);
+    pre.classList.add("fade");                                   // labels fade out
+    setTimeout(() => pre.classList.add("wipe"), 500);            // then the panel wipes up
+    setTimeout(() => { pre.classList.add("done"); unlock(); }, 1150);
+  })(t0);
+  startHero(COUNT_MS + 600);
 }
+runPreloader();
 
-// Finding 4: how dangerous opponents' shots were, match by match
-function buildDefenseChart(matches) {
-  // Pooled average: total xG divided by total shots (fairer than averaging match averages)
-  const perShot = list =>
-    list.reduce((s, m) => s + m.opponent_xg, 0) / list.reduce((s, m) => s + m.opponent_shots, 0);
-  const group = matches.filter(m => m.stage === "Group");
-  const knockout = matches.filter(m => m.stage !== "Group");
-  document.getElementById("group-xgps").textContent = perShot(group).toFixed(2);
-  document.getElementById("ko-xgps").textContent = perShot(knockout).toFixed(2);
-
-  new Chart(document.getElementById("defense-chart"), {
-    type: "bar",
-    data: {
-      labels: matches.map(m => [m.opponent, m.stage]),
-      datasets: [{
-        label: "Opponent xG per shot",
-        data: matches.map(m => +(m.opponent_xg / m.opponent_shots).toFixed(3)),
-        backgroundColor: matches.map(m => (m.stage === "Group" ? GRAY : RED)),
-        borderRadius: 4,
-      }],
-    },
-    options: {
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-        y: { beginAtZero: true, title: { display: true, text: "xG per shot conceded" } },
-      },
-    },
+/* =====================================================================
+   NAVIGATION: smooth anchor scrolling and the mobile menu
+   ===================================================================== */
+const burger = document.querySelector(".burger");
+const menu = document.getElementById("mobile-menu");
+function setMenu(open) {
+  burger.setAttribute("aria-expanded", String(open));
+  menu.classList.toggle("open", open);
+  document.body.classList.toggle("locked", open);
+}
+burger.addEventListener("click", () => setMenu(burger.getAttribute("aria-expanded") !== "true"));
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener("click", e => {
+    const target = document.querySelector(a.getAttribute("href"));
+    if (!target) return;
+    e.preventDefault();
+    setMenu(false);
+    scrollToEl(target);
   });
+});
+
+/* =====================================================================
+   MARQUEE
+   ===================================================================== */
+const marqueeWords = ["Fewer shots, better chances", "Defending the box", "Beating the odds", "Stronger when it got harder", "Dima Maghrib"];
+const track = document.getElementById("marquee");
+[...marqueeWords, ...marqueeWords].forEach((w, i) => {
+  const item = document.createElement("span");
+  item.className = "marquee-item";
+  item.textContent = w;
+  if (i >= marqueeWords.length) item.setAttribute("aria-hidden", "true");  // the copy is only visual
+  track.appendChild(item);
+});
+
+/* =====================================================================
+   CHARTS: shared style
+   ===================================================================== */
+if (window.Chart) {
+  Chart.defaults.color = MUTED;
+  Chart.defaults.borderColor = LINE;
+  Chart.defaults.font.family = "Onest, system-ui, sans-serif";
+}
+const axisTitle = text => ({ display: true, text, color: MUTED });
+
+/* =====================================================================
+   LOAD THE DATA, THEN BUILD EVERY DATA-DRIVEN PART
+   ===================================================================== */
+fetch("data.json")
+  .then(r => r.json())
+  .then(data => {
+    buildNumbers(data.matches);
+    buildRun(data.matches);
+    if (window.Chart) {
+      buildMatchChart(data.matches);
+      buildPlayerChart(data);
+      buildDefenseChart(data.matches);
+    }
+    fetch("shots.json")
+      .then(r => r.json())
+      .then(shots => { buildHeroShots(shots); buildShotMap(shots, data.matches); })
+      .catch(() => { document.getElementById("shot-summary").textContent = "Shot data could not be loaded."; });
+  });
+
+// HERO ARTWORK: every opponent shot drops onto the pitch, one after another
+function buildHeroShots(shots) {
+  const g = document.getElementById("hero-dots");
+  document.getElementById("hero-count").textContent = shots.length;
+  const wait = Math.max(0, heroStart - performance.now()) + 300;   // start just after the title rises
+  [...shots].sort((a, b) => b.xg - a.xg).forEach((s, i) => {
+    const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    dot.setAttribute("cx", s.y);
+    dot.setAttribute("cy", 120 - s.x);
+    dot.setAttribute("r", 0.6 + s.xg * 3);
+    dot.setAttribute("fill", s.outcome === "Goal" ? ACCENT : MUTED);
+    const o = s.outcome === "Goal" ? 1 : 0.45;           // goals stand out, the rest stay quiet
+    dot.style.setProperty("--o", o);
+    if (REDUCED) dot.setAttribute("opacity", o);
+    if (!REDUCED) {
+      dot.setAttribute("class", "hero-shot");
+      dot.style.setProperty("--d", wait + i * 22 + "ms");
+    }
+    g.appendChild(dot);
+  });
+  setupLiquid();
 }
 
-// 1. Headline: xG per shot, Morocco vs Spain
-function buildHeadline(matches) {
+// LIQUID WOBBLE: on laptops, hovering the hero bends the dots like water.
+// A small spring animation eases the effect in and out instead of snapping.
+function setupLiquid() {
+  if (REDUCED || !matchMedia("(hover: hover) and (min-width: 769px)").matches) return;
+  const hero = document.querySelector(".hero");
+  const map = document.getElementById("liquid-map");
+  const noise = document.getElementById("liquid-noise");
+  let target = 0, value = 0, speed = 0, running = false;
+  function step() {
+    // spring: accelerate toward the target, with friction slowing it down
+    speed += (target - value) * 0.035;
+    speed *= 0.82;
+    value += speed;
+    map.setAttribute("scale", (value * 18).toFixed(2));
+    noise.setAttribute("baseFrequency", (0.009 + value * 0.013).toFixed(4));
+    if (Math.abs(target - value) > 0.001 || Math.abs(speed) > 0.001) requestAnimationFrame(step);
+    else running = false;
+  }
+  const go = t => { target = t; if (!running) { running = true; requestAnimationFrame(step); } };
+  hero.addEventListener("pointerenter", () => go(1));
+  hero.addEventListener("pointerleave", () => go(0));
+}
+
+// Opponent's xG per shot over a list of matches (total xG / total shots)
+const perShot = list => list.reduce((s, m) => s + m.opponent_xg, 0) / list.reduce((s, m) => s + m.opponent_shots, 0);
+
+// BY THE NUMBERS: calculated from the data, not typed in
+function buildNumbers(matches) {
   const spain = matches.find(m => m.opponent === "Spain");
-  const moroccoPerShot = spain.morocco_xg / spain.morocco_shots;
-  const spainPerShot = spain.opponent_xg / spain.opponent_shots;
-  const times = (moroccoPerShot / spainPerShot).toFixed(1) + "×";
-  document.getElementById("headline-number").textContent = times;
-  document.getElementById("headline-times").textContent = times;
+  const ratio = (spain.morocco_xg / spain.morocco_shots) / (spain.opponent_xg / spain.opponent_shots);
+  document.getElementById("n-ratio").textContent = ratio.toFixed(1) + "×";
+
+  const sp = matches.filter(m => m.opponent === "Spain" || m.opponent === "Portugal");
+  const spShots = sp.reduce((s, m) => s + m.opponent_shots, 0);
+  document.getElementById("n-sp").textContent = sp.reduce((s, m) => s + m.opponent_goals, 0);
+  document.getElementById("n-sp-label").textContent = `Goals Spain and Portugal scored from ${spShots} shots`;
+
+  const goals = matches.reduce((s, m) => s + m.morocco_goals, 0);
+  const xg = matches.reduce((s, m) => s + m.morocco_xg, 0);
+  document.getElementById("n-goals").textContent = goals;
+  document.getElementById("n-goals-label").textContent = `Goals Morocco scored from ${xg.toFixed(2)} xG`;
+  document.getElementById("team-goals").textContent = goals;
+  document.getElementById("team-xg").textContent = xg.toFixed(2);
 }
 
-// 2. Timeline: one row per match
+// THE RUN: one tappable row per match
 function buildRun(matches) {
-  const list = document.getElementById("run");
-  matches.forEach(m => {
-    // A shootout happened if the data has penalty scores (null means no shootout)
-    const shootout = m.morocco_pens != null;
+  const list = document.getElementById("run-list");
+  matches.forEach((m, i) => {
+    const shootout = m.morocco_pens != null;              // null means there was no shootout
     const wonShootout = shootout && m.morocco_pens > m.opponent_pens;
     const won = m.morocco_goals > m.opponent_goals || wonShootout;
-    const note = shootout
-      ? `<span class="note">${wonShootout ? "Won" : "Lost"} ${m.morocco_pens}–${m.opponent_pens} on penalties</span>`
-      : "";
     const li = document.createElement("li");
-    if (won) li.className = "win";
-    // Each row is a button: tapping it shows that match on the shot map
+    li.className = "reveal";
+    li.style.setProperty("--d", i * 70 + "ms");
     li.innerHTML =
-      `<button type="button" class="match-btn" aria-label="Show ${m.opponent} (${m.stage}) on the shot map">` +
-      `<span>${m.opponent}<br><span class="stage">${m.stage} · see shots ›</span></span>` +
-      `<span class="score">${m.morocco_goals}–${m.opponent_goals}${note}</span></button>`;
-    li.querySelector("button").addEventListener("click", () => showMatchOnMap(m));
+      `<button type="button" class="match-btn${won ? " win" : ""}" aria-label="${m.opponent}, ${m.stage}. Show its shots on the shot map">` +
+        `<span class="idx">${String(i + 1).padStart(2, "0")}</span>` +
+        `<span><span class="team">${m.opponent}</span><span class="stage small-label">${m.stage}</span></span>` +
+        `<span><span class="score">${m.morocco_goals}–${m.opponent_goals}</span>` +
+        (shootout ? `<span class="pens small-label">${wonShootout ? "Won" : "Lost"} ${m.morocco_pens}–${m.opponent_pens} on pens</span>` : "") +
+        `</span></button>`;
+    li.querySelector("button").addEventListener("click", () => {
+      if (window.selectShots) window.selectShots(m.stage + "|" + m.opponent);
+      scrollToEl(document.getElementById("shot-summary"));   // land on the map itself
+    });
     list.appendChild(li);
+    watch(li);
   });
 }
 
-// Jump from the timeline to the shot map, filtered to one match
-function showMatchOnMap(m) {
-  const filter = document.getElementById("shot-filter");
-  const value = m.stage + "|" + m.opponent;
-  if ([...filter.options].some(o => o.value === value)) {
-    filter.value = value;
-    filter.dispatchEvent(new Event("change"));   // redraws the map, same as picking it yourself
-  }
-  document.getElementById("shotmap-section").scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-// 3. Shots / xG chart with a toggle
+// FINDING 1: bar chart with a Shots / xG toggle
 function buildMatchChart(matches) {
-  const labels = matches.map(m => [m.opponent, m.stage]);
   const series = {
     shots: [matches.map(m => m.morocco_shots), matches.map(m => m.opponent_shots)],
     xg: [matches.map(m => m.morocco_xg), matches.map(m => m.opponent_xg)],
@@ -410,22 +908,21 @@ function buildMatchChart(matches) {
   const chart = new Chart(document.getElementById("match-chart"), {
     type: "bar",
     data: {
-      labels,
+      labels: matches.map(m => [m.opponent, m.stage]),
       datasets: [
-        { label: "Morocco", data: series.shots[0], backgroundColor: RED, borderRadius: 4 },
-        { label: "Opponent", data: series.shots[1], backgroundColor: GRAY, borderRadius: 4 },
+        { label: "Morocco", data: series.shots[0], backgroundColor: ACCENT, borderRadius: 3 },
+        { label: "Opponent", data: series.shots[1], backgroundColor: MUTED, borderRadius: 3 },
       ],
     },
     options: {
       maintainAspectRatio: false,
-      plugins: { legend: { position: "bottom" } },
+      plugins: { legend: { position: "bottom", labels: { usePointStyle: true, boxWidth: 8 } } },
       scales: {
         x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-        y: { beginAtZero: true, title: { display: true, text: "Shots" } },
+        y: { beginAtZero: true, title: axisTitle("Shots") },
       },
     },
   });
-
   document.querySelectorAll(".toggle button").forEach(button => {
     button.addEventListener("click", () => {
       const measure = button.dataset.measure;
@@ -433,38 +930,131 @@ function buildMatchChart(matches) {
       chart.data.datasets[1].data = series[measure][1];
       chart.options.scales.y.title.text = measure === "xg" ? "Expected goals (xG)" : "Shots";
       chart.update();
-      document.querySelectorAll(".toggle button").forEach(b =>
-        b.setAttribute("aria-pressed", b === button ? "true" : "false"));
+      document.querySelectorAll(".toggle button").forEach(b => b.setAttribute("aria-pressed", String(b === button)));
     });
   });
 }
 
-// 5. Players: xG vs actual goals
+// FINDING 3: expected goals vs actual goals per player
 function buildPlayerChart(data) {
-  const teamGoals = data.matches.reduce((sum, m) => sum + m.morocco_goals, 0);
-  const teamXg = data.matches.reduce((sum, m) => sum + m.morocco_xg, 0);
-  document.getElementById("team-goals").textContent = teamGoals;
-  document.getElementById("team-xg").textContent = teamXg.toFixed(2);
-
   new Chart(document.getElementById("player-chart"), {
     type: "bar",
     data: {
       labels: data.players.map(p => p.player),
       datasets: [
-        { label: "Expected goals (xG)", data: data.players.map(p => p.xg), backgroundColor: GRAY, borderRadius: 4 },
-        { label: "Actual goals", data: data.players.map(p => p.goals), backgroundColor: RED, borderRadius: 4 },
+        { label: "Expected goals (xG)", data: data.players.map(p => p.xg), backgroundColor: MUTED, borderRadius: 3 },
+        { label: "Actual goals", data: data.players.map(p => p.goals), backgroundColor: ACCENT, borderRadius: 3 },
       ],
     },
     options: {
       indexAxis: "y",
       maintainAspectRatio: false,
-      plugins: { legend: { position: "bottom" } },
+      plugins: { legend: { position: "bottom", labels: { usePointStyle: true, boxWidth: 8 } } },
+      scales: { x: { beginAtZero: true }, y: { grid: { display: false }, ticks: { font: { size: 11 } } } },
+    },
+  });
+}
+
+// FINDING 4: how dangerous opponents' shots were, match by match
+function buildDefenseChart(matches) {
+  const group = matches.filter(m => m.stage === "Group");
+  const knockout = matches.filter(m => m.stage !== "Group");
+  document.getElementById("group-xgps").textContent = perShot(group).toFixed(2);
+  document.getElementById("ko-xgps").textContent = perShot(knockout).toFixed(2);
+  new Chart(document.getElementById("defense-chart"), {
+    type: "bar",
+    data: {
+      labels: matches.map(m => [m.opponent, m.stage]),
+      datasets: [{
+        label: "Opponent xG per shot",
+        data: matches.map(m => +(m.opponent_xg / m.opponent_shots).toFixed(3)),
+        backgroundColor: matches.map(m => (m.stage === "Group" ? MUTED : ACCENT)),
+        borderRadius: 3,
+      }],
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
       scales: {
-        x: { beginAtZero: true },
-        y: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { beginAtZero: true, title: axisTitle("xG per shot conceded") },
       },
     },
   });
+}
+
+// FINDING 2: interactive shot map with a selector list
+function buildShotMap(shots, matches) {
+  const selector = document.getElementById("selector");
+  const dots = document.getElementById("shot-dots");
+  const summary = document.getElementById("shot-summary");
+  const detail = document.getElementById("shot-detail");
+  const DEFAULT_DETAIL = "Tap a dot to see who shot, when, and what happened.";
+
+  // StatsBomb's short outcome codes, in plain words
+  const OUTCOME = { "Off T": "Off target", "Wayward": "Way off target", "Post": "Hit the post",
+                    "Saved Off Target": "Saved", "Saved to Post": "Saved onto the post" };
+  const outcomeText = o => OUTCOME[o] || o;
+
+  const choices = [
+    { value: "knockouts", name: "All knockout matches", sub: "Spain, Portugal, France, Croatia" },
+    { value: "group", name: "All group matches", sub: "Croatia, Belgium, Canada" },
+    ...matches.map(m => ({ value: m.stage + "|" + m.opponent, name: m.opponent, sub: m.stage })),
+  ];
+
+  const buttons = choices.map((c, i) => {
+    const li = document.createElement("li");
+    li.className = "reveal";
+    li.style.setProperty("--d", i * 50 + "ms");
+    li.innerHTML =
+      `<button type="button" class="sel-btn" aria-pressed="false">` +
+        `<span class="idx">${String(i + 1).padStart(2, "0")}</span>` +
+        `<span><span class="name">${c.name}</span><span class="sub small-label">${c.sub}</span></span>` +
+        `<span class="rule"></span></button>`;
+    const btn = li.querySelector("button");
+    btn.addEventListener("click", () => select(c.value));
+    selector.appendChild(li);
+    watch(li);
+    return { value: c.value, btn };
+  });
+
+  function select(value) {
+    buttons.forEach(b => b.btn.setAttribute("aria-pressed", String(b.value === value)));
+    const shown = shots.filter(s =>
+      value === "all" ||
+      (value === "group" && s.stage === "Group") ||
+      (value === "knockouts" && s.stage !== "Group") ||
+      value === s.stage + "|" + s.team
+    );
+    const goals = shown.filter(s => s.outcome === "Goal").length;
+    const xg = shown.reduce((sum, s) => sum + s.xg, 0);
+    summary.innerHTML = `${shown.length} shot${shown.length === 1 ? "" : "s"} · <em>${goals} goal${goals === 1 ? "" : "s"}</em> · ${xg.toFixed(2)} xG`;
+
+    // Biggest dots first, so small dots sit on top and stay tappable
+    dots.innerHTML = "";
+    [...shown].sort((a, b) => b.xg - a.xg).forEach(s => {
+      const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      dot.setAttribute("cx", s.y);          // pitch width runs left to right
+      dot.setAttribute("cy", 120 - s.x);    // the goal sits at the top
+      dot.setAttribute("r", 0.8 + s.xg * 4);
+      dot.setAttribute("fill", s.outcome === "Goal" ? ACCENT : MUTED);
+      dot.setAttribute("class", "shot");
+      dot.setAttribute("tabindex", "0");
+      dot.setAttribute("aria-label", `${s.player}, ${s.minute}', ${s.xg} xG, ${outcomeText(s.outcome)}`);
+      const show = () => {
+        dots.querySelectorAll(".selected").forEach(d => d.classList.remove("selected"));
+        dot.classList.add("selected");
+        detail.innerHTML = `<strong>${s.player}</strong> (${s.team}), ${s.minute}'<br>xG ${s.xg.toFixed(2)} · ${outcomeText(s.outcome)}`;
+      };
+      dot.addEventListener("click", show);
+      dot.addEventListener("keydown", e => { if (e.key === "Enter") show(); });
+      dots.appendChild(dot);
+    });
+    detail.textContent = DEFAULT_DETAIL;
+  }
+
+  window.selectShots = select;   // lets the match list jump here
+  select("knockouts");
 }
 </script>
 </body>
