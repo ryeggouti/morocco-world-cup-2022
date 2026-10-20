@@ -207,8 +207,13 @@ function buildHeadline(matches) {
 function buildRun(matches) {
   const list = document.getElementById("run");
   matches.forEach(m => {
-    const won = m.morocco_goals > m.opponent_goals || m.opponent === "Spain";
-    const note = m.opponent === "Spain" ? '<span class="note">Won 3–0 on penalties</span>' : "";
+    // A shootout happened if the data has penalty scores (null means no shootout)
+    const shootout = m.morocco_pens != null;
+    const wonShootout = shootout && m.morocco_pens > m.opponent_pens;
+    const won = m.morocco_goals > m.opponent_goals || wonShootout;
+    const note = shootout
+      ? `<span class="note">${wonShootout ? "Won" : "Lost"} ${m.morocco_pens}–${m.opponent_pens} on penalties</span>`
+      : "";
     const li = document.createElement("li");
     if (won) li.className = "win";
     li.innerHTML =
