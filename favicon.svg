@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- How Did Morocco Reach the Semi-Final?: an original two-handled cup wearing a fez -->
+  <circle cx="32" cy="32" r="32" fill="#1b1a1e"/>
+  <g fill="none" stroke="#e2b444" stroke-width="3.2" stroke-linecap="round">
+    <path d="M18.5 29c-6 0-7.5 3-7 6.5.6 3.6 4.5 5 9 4.3"/>
+    <path d="M45.5 29c6 0 7.5 3 7 6.5-.6 3.6-4.5 5-9 4.3"/>
+  </g>
+  <path d="M17 27.5h30c0 10.5-6 16.5-15 16.5s-15-6-15-16.5z" fill="#e2b444"/>
+  <path d="M21 30h4c0 6 2 9.5 5 11.3-5-.6-9-4.6-9-11.3z" fill="#f7d77a" opacity="0.7"/>
+  <rect x="29" y="43" width="6" height="6" fill="#c99a2e"/>
+  <rect x="22" y="49" width="20" height="5.5" rx="1.5" fill="#e2b444"/>
+  <g transform="rotate(-6 32 28)">
+    <path d="M23.5 28.5 26.4 12.8q5.6-1.6 11.2 0L40.5 28.5q-8.5 2-17 0z" fill="#d42e34"/>
+    <path d="M26.4 12.8q5.6-1.6 11.2 0-5.6 1.7-11.2 0z" fill="#a8222a"/>
+    <path d="M27.2 15.5 25.2 27" stroke="#ff6b6b" stroke-width="1.6" stroke-linecap="round" opacity="0.55"/>
+    <path d="M32 12.4c3.2 1.2 4.6 4.6 4.4 9" fill="none" stroke="#141414" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M35 21h3l-.4 4.4h-2.2z" fill="#141414"/>
+  </g>
+</svg>
