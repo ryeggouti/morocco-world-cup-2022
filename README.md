@@ -4,6 +4,10 @@
 
 In 2022, Morocco became the first African team to reach a World Cup semi-final. I used free match data to understand how.
 
+![Every shot Morocco's opponents took in the tournament, sized by xG, with the 4 goals in red](shotmap.png)
+
+*All 70 shots Morocco's opponents took at the 2022 World Cup. Bigger circles were better chances; the 4 red ones went in.*
+
 ## Key findings
 1. **Fewer shots, better chances.** Spain and Portugal out-shot Morocco (12 vs 6 and 12 vs 9), but Morocco had the higher expected goals (xG) in both matches: 0.57 vs 0.49 and 0.97 vs 0.74.
 2. **Defending the box.** Knockout opponents often got into Morocco's box, but mostly for low-quality shots. Spain and Portugal took 24 shots combined and scored 0.
@@ -25,3 +29,10 @@ In 2022, Morocco became the first African team to reach a World Cup semi-final. 
 - Penalty shootout kicks are excluded from shot and xG totals (Morocco beat Spain 3–0 on penalties after a 0–0 draw).
 - StatsBomb credits the 72' goal vs Belgium to Romain Saïss; official records credit Abdelhamid Sabiri. The team total (6 goals) matches official results.
 - Comparisons between teams are limited by sample size: teams played 3 to 7 matches against different opponents.
+
+
+## License
+Code: MIT. Match data: [StatsBomb Open Data](https://github.com/statsbomb/open-data), used under StatsBomb's own terms. Data credit: StatsBomb.
+
+Part of **[Morocco in Data](https://ryeggouti.github.io/)**. See also:
+[Is Morocco Running Out of Rain?](https://ryeggouti.github.io/morocco-drought/) · [Stork Flight](https://ryeggouti.github.io/stork-flight/)
